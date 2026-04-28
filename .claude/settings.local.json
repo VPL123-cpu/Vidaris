@@ -1,0 +1,14 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(npx create-next-app@latest . --typescript --tailwind --eslint --app --src-dir --no-import-alias --yes)",
+      "Bash(npm install *)",
+      "Bash(npx tsc *)",
+      "Bash(grep -q \"error TS\\\\|^$\" C:/Users/pinau/AppData/Local/Temp/claude/C--Users-pinau-Documents-Vidaris/c453a0cb-4037-4166-a2d0-82d9e1f99428/tasks/b5ngyfhv0.output)",
+      "Bash(npm run *)",
+      "Bash(curl -s -o /dev/null -w '%{http_code} __TRACKED_VAR__\\\\n' http://localhost:3001__TRACKED_VAR__)",
+      "PowerShell(try { $r = Invoke-WebRequest -Uri \"http://localhost:3000/dashboard\" -TimeoutSec 30 -UseBasicParsing; \"$\\($r.StatusCode\\) /dashboard\" } catch { \"ERR: $_\" })",
+      "Bash(echo \"EXIT:$?\")"
+    ]
+  }
+}

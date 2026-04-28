@@ -1,0 +1,101 @@
+@import "tailwindcss";
+
+@theme {
+  --color-bg-base: #0B0F1A;
+  --color-bg-card: #111827;
+  --color-bg-card-hover: #1a2235;
+  --color-bg-elevated: #161d2e;
+  --color-border: rgba(255, 255, 255, 0.06);
+  --color-border-subtle: rgba(255, 255, 255, 0.04);
+
+  --color-gold: #F5C044;
+  --color-gold-dim: #c49a35;
+  --color-gold-glow: rgba(245, 192, 68, 0.25);
+
+  --color-maths: #f97316;
+  --color-eco: #2dd4bf;
+  --color-philo: #f472b6;
+  --color-histoire: #a78bfa;
+  --color-francais: #34d399;
+  --color-anglais: #60a5fa;
+
+  --color-text-primary: #f1f5f9;
+  --color-text-secondary: #94a3b8;
+  --color-text-muted: #475569;
+
+  --font-sans: "Inter", system-ui, sans-serif;
+  --radius-card: 1rem;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html {
+  background: #0B0F1A;
+  color: #f1f5f9;
+  font-family: var(--font-sans);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+body {
+  background: #0B0F1A;
+  color: #f1f5f9;
+  min-height: 100dvh;
+}
+
+::-webkit-scrollbar {
+  width: 4px;
+  height: 4px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 999px;
+}
+
+@keyframes pulse-glow {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(245, 192, 68, 0.3); }
+  50% { box-shadow: 0 0 0 12px rgba(245, 192, 68, 0); }
+}
+
+@keyframes timer-pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.85; }
+}
+
+@keyframes shimmer {
+  0% { background-position: -200% 0; }
+  100% { background-position: 200% 0; }
+}
+
+.glow-gold {
+  animation: pulse-glow 2s ease-in-out infinite;
+}
+
+.timer-running {
+  animation: timer-pulse 2s ease-in-out infinite;
+}
+
+.card-glass {
+  background: rgba(17, 24, 39, 0.8);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+.progress-shimmer {
+  background: linear-gradient(
+    90deg,
+    rgba(245, 192, 68, 0.1) 0%,
+    rgba(245, 192, 68, 0.3) 50%,
+    rgba(245, 192, 68, 0.1) 100%
+  );
+  background-size: 200% 100%;
+  animation: shimmer 2s linear infinite;
+}
