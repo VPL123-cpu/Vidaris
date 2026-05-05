@@ -20,88 +20,6 @@ const PAGE_TITLES: Record<string, string> = {
   "/social": "Social",
 };
 
-// Simulated friend presence — replaced by real API when backend is ready
-const DEMO_FRIENDS = [
-  { name: "Alice", subject: "Maths", studying: true, color: "#F5C044" },
-  { name: "Thomas", subject: "Philo", studying: false, color: "#a78bfa" },
-];
-
-function FriendPresence() {
-  const onlineCount = DEMO_FRIENDS.filter((f) => f.studying).length;
-
-  return (
-    <div className="relative group hidden md:block">
-      {/* Trigger */}
-      <button className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg bg-white/[0.04] border border-white/[0.06] hover:border-white/10 transition-colors">
-        <div className="flex -space-x-1">
-          {DEMO_FRIENDS.map((f, i) => (
-            <div
-              key={f.name}
-              className="relative w-5 h-5 rounded-full flex items-center justify-center text-[9px] font-bold text-white ring-1 ring-[#0B0F1A]"
-              style={{ backgroundColor: f.color + "40", zIndex: DEMO_FRIENDS.length - i }}
-            >
-              {f.name[0]}
-              {f.studying && (
-                <span className="absolute -bottom-0.5 -right-0.5 w-2 h-2 rounded-full bg-emerald-400 border border-[#0B0F1A]" />
-              )}
-            </div>
-          ))}
-        </div>
-        <span className="text-xs font-medium text-slate-400">
-          {onlineCount} en session
-        </span>
-      </button>
-
-      {/* Dropdown */}
-      <div className="absolute right-0 top-full mt-2 w-52 bg-[#161d2e] border border-white/10 rounded-xl shadow-2xl overflow-hidden opacity-0 group-hover:opacity-100 pointer-events-none group-hover:pointer-events-auto transition-all duration-200 z-50 translate-y-1 group-hover:translate-y-0">
-        <div className="px-3 py-2 border-b border-white/[0.06]">
-          <p className="text-[10px] font-semibold text-slate-500 uppercase tracking-wider">
-            Amis — activité
-          </p>
-        </div>
-        {DEMO_FRIENDS.map((friend, i) => (
-          <motion.div
-            key={friend.name}
-            initial={{ opacity: 0, x: -6 }}
-            animate={{ opacity: 1, x: 0 }}
-            transition={{ delay: i * 0.06 }}
-            className="flex items-center gap-3 px-3 py-2.5 hover:bg-white/[0.03] transition-colors"
-          >
-            <div className="relative">
-              <div
-                className="w-7 h-7 rounded-lg flex items-center justify-center text-xs font-bold text-white"
-                style={{ backgroundColor: friend.color + "25" }}
-              >
-                {friend.name[0]}
-              </div>
-              <span
-                className={`absolute -bottom-0.5 -right-0.5 w-2.5 h-2.5 rounded-full border-2 border-[#161d2e] ${
-                  friend.studying ? "bg-emerald-400" : "bg-slate-600"
-                }`}
-              />
-            </div>
-            <div className="flex-1 min-w-0">
-              <p className="text-xs font-semibold text-white">{friend.name}</p>
-              <p className="text-[10px] text-slate-500">
-                {friend.studying
-                  ? `En session — ${friend.subject}`
-                  : "Inactif"}
-              </p>
-            </div>
-            {friend.studying && (
-              <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse flex-shrink-0" />
-            )}
-          </motion.div>
-        ))}
-        <div className="px-3 py-2 border-t border-white/[0.06]">
-          <p className="text-[10px] text-slate-600 text-center">
-            Données simulées · <span className="underline cursor-pointer hover:text-slate-400 transition-colors">Inviter de vrais amis</span>
-          </p>
-        </div>
-      </div>
-    </div>
-  );
-}
 
 export function SiteHeader() {
   const pathname = usePathname();
@@ -146,9 +64,6 @@ export function SiteHeader() {
 
       {/* Right */}
       <div className="flex items-center gap-2 sm:gap-2.5">
-        {/* Friend presence */}
-        <FriendPresence />
-
         {/* Streak badge */}
         {streak > 0 && (
           <div className="hidden sm:flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-orange-500/10 border border-orange-500/20">
