@@ -8,7 +8,29 @@
       "Bash(npm run *)",
       "Bash(curl -s -o /dev/null -w '%{http_code} __TRACKED_VAR__\\\\n' http://localhost:3001__TRACKED_VAR__)",
       "PowerShell(try { $r = Invoke-WebRequest -Uri \"http://localhost:3000/dashboard\" -TimeoutSec 30 -UseBasicParsing; \"$\\($r.StatusCode\\) /dashboard\" } catch { \"ERR: $_\" })",
-      "Bash(echo \"EXIT:$?\")"
+      "Bash(echo \"EXIT:$?\")",
+      "Bash(Get-ChildItem -Path \"c:\\\\Users\\\\pinau\\\\Documents\\\\Vidaris\\\\src\\\\lib\" -Filter \"data.ts\" -ErrorAction SilentlyContinue)",
+      "Bash(Select-Object FullName)",
+      "Bash(Get-ChildItem -Path \"c:\\\\Users\\\\pinau\\\\Documents\\\\Vidaris\" -Directory)",
+      "Bash(git -C \"c:\\\\Users\\\\pinau\\\\Documents\\\\Vidaris\" remote -v)",
+      "Bash(git -C \"c:\\\\Users\\\\pinau\\\\Documents\\\\Vidaris\" status --short)",
+      "Bash(sed 's/\\\\.tsx$//')",
+      "Bash(pnpm --version)",
+      "Bash(mv src *)",
+      "Bash(mv public *)",
+      "Bash(mv supabase *)",
+      "Bash(mv middleware.ts apps/web/)",
+      "Bash(mv next.config.ts apps/web/)",
+      "Bash(pnpm install *)",
+      "Bash(pnpm build:web)",
+      "Bash(npx create-expo-app@latest mobile --template blank-typescript)",
+      "Bash(npx expo *)",
+      "Bash(npm view *)",
+      "Bash(python3 -c \"import json,sys; vs=[v for v in json.load\\(sys.stdin\\) if v.startswith\\('6.'\\)]; print\\(vs[-5:]\\)\")",
+      "Bash(pnpm dev:mobile)",
+      "Bash(git add *)",
+      "Bash(git rm *)",
+      "Bash(git reset *)"
     ]
   }
 }
