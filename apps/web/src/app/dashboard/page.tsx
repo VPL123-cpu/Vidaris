@@ -1,3 +1,5 @@
+"use client";
+
 import { PageContainer } from "@/components/layout/PageContainer";
 import { DashboardKpis } from "@/components/dashboard/DashboardKpis";
 import { DashboardChart } from "@/components/dashboard/DashboardChart";

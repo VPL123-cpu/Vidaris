@@ -33,8 +33,8 @@ export default function SignupPage() {
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     await signup(email, name, password);
-    if (!useAuthStore.getState().error) {
-      addToast("Compte créé ! Bienvenue 🎉", "success");
+    if (useAuthStore.getState().user) {
+      window.location.replace("/dashboard");
     }
   }
 

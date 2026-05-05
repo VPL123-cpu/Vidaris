@@ -1,3 +1,5 @@
+"use client";
+
 import { PageContainer } from "@/components/layout/PageContainer";
 import { TimerPage } from "@/components/timer/TimerPage";
 

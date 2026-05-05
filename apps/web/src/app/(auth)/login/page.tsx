@@ -32,6 +32,9 @@ export default function LoginPage() {
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     await login(email, password);
+    if (useAuthStore.getState().user) {
+      window.location.replace("/dashboard");
+    }
   }
 
   return (
