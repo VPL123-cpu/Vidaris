@@ -211,18 +211,21 @@ export function SiteHeader() {
             <button className="w-8 h-8 rounded-xl bg-[#F5C044]/15 flex items-center justify-center text-[#F5C044] hover:bg-[#F5C044]/25 transition-colors">
               <User size={15} />
             </button>
-            <div className="absolute right-0 top-full mt-2 min-w-[160px] bg-[#161d2e] border border-white/10 rounded-xl shadow-xl overflow-hidden opacity-0 group-hover:opacity-100 pointer-events-none group-hover:pointer-events-auto transition-opacity z-50">
-              <div className="px-3 py-2.5 border-b border-white/[0.06]">
-                <p className="text-xs font-semibold text-white truncate">{user.name}</p>
-                <p className="text-[10px] text-slate-500 truncate">{user.email}</p>
+            {/* pt-2 bridges the gap so hover doesn't break when moving to dropdown */}
+            <div className="absolute right-0 top-full pt-2 min-w-[160px] opacity-0 group-hover:opacity-100 pointer-events-none group-hover:pointer-events-auto transition-opacity z-50">
+              <div className="bg-[#161d2e] border border-white/10 rounded-xl shadow-xl overflow-hidden">
+                <div className="px-3 py-2.5 border-b border-white/[0.06]">
+                  <p className="text-xs font-semibold text-white truncate">{user.name}</p>
+                  <p className="text-[10px] text-slate-500 truncate">{user.email}</p>
+                </div>
+                <button
+                  onClick={async () => { await logout(); window.location.replace("/login"); }}
+                  className="flex items-center gap-2 w-full px-3 py-2.5 text-xs text-slate-400 hover:text-red-400 hover:bg-red-500/5 transition-colors"
+                >
+                  <LogOut size={13} />
+                  Se déconnecter
+                </button>
               </div>
-              <button
-                onClick={logout}
-                className="flex items-center gap-2 w-full px-3 py-2.5 text-xs text-slate-400 hover:text-red-400 hover:bg-red-500/5 transition-colors"
-              >
-                <LogOut size={13} />
-                Se déconnecter
-              </button>
             </div>
           </div>
         ) : (
