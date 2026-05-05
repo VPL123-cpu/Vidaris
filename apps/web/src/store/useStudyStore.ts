@@ -528,22 +528,19 @@ export const useStudyStore = create<StudyStore>()((set, get) => ({
     try {
       const uid = requireUser(get().userId);
       const supabase = createClient();
-      const { data, error } = await supabase
+      const { error } = await supabase
         .from("subjects")
         .insert({
           user_id: uid,
           name: subject.label,
           color: subject.color,
           weekly_goal: subject.goal,
-        })
-        .select("id,user_id,name,color,weekly_goal,created_at")
-        .single();
+        });
       if (error) throw error;
-
-      const newSubject = mapSubject(data as SubjectRow);
+      await get().fetchSubjects();
+      const subjects = get().subjects;
       set((s) => ({
-        subjects: [...s.subjects, newSubject],
-        selectedSubjectId: s.selectedSubjectId || newSubject.id,
+        selectedSubjectId: s.selectedSubjectId || subjects[subjects.length - 1]?.id || "",
       }));
     } catch (e) {
       set({ error: (e as Error).message });
