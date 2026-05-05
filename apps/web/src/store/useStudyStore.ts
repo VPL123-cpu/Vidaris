@@ -47,6 +47,7 @@ interface StudyStore extends TimerState {
   sessions: StudySession[];
   subjects: Subject[];
   friendships: Friendship[];
+  friendPresence: FriendPresenceData[];
   pomodoroConfig: PomodoroConfig;
   streakConfig: StreakConfig;
   hardcoreMode: boolean;
@@ -58,6 +59,7 @@ interface StudyStore extends TimerState {
   fetchSessions: () => Promise<void>;
   fetchSubjects: () => Promise<void>;
   fetchFriendships: () => Promise<void>;
+  fetchFriendPresence: () => Promise<void>;
 
   setMode: (mode: TimerMode) => void;
   setSubject: (subjectId: string) => void;
@@ -110,6 +112,14 @@ type FriendshipRow = {
   status: "pending" | "accepted";
   created_at: string;
 };
+
+export interface FriendPresenceData {
+  id: string;
+  name: string;
+  color: string;
+  studying: boolean;
+  subjectLabel?: string;
+}
 
 function mapSubject(row: SubjectRow): Subject {
   return {
@@ -168,6 +178,7 @@ export const useStudyStore = create<StudyStore>()((set, get) => ({
   sessions: [],
   subjects: [],
   friendships: [],
+  friendPresence: [],
   pomodoroConfig: DEFAULT_POMODORO_CONFIG,
   streakConfig: DEFAULT_STREAK_CONFIG,
   hardcoreMode: false,
@@ -199,6 +210,7 @@ export const useStudyStore = create<StudyStore>()((set, get) => ({
       get().fetchSubjects(),
       get().fetchFriendships(),
     ]);
+    await get().fetchFriendPresence();
 
     const subjects = get().subjects;
     set((s) => ({
@@ -212,11 +224,12 @@ export const useStudyStore = create<StudyStore>()((set, get) => ({
 
   fetchSessions: async () => {
     try {
-      requireUser(get().userId);
+      const uid = requireUser(get().userId);
       const supabase = createClient();
       const { data, error } = await supabase
         .from("sessions")
         .select("id,user_id,subject_id,duration,started_at,created_at,mode")
+        .eq("user_id", uid)
         .order("started_at", { ascending: false });
       if (error) throw error;
       set({ sessions: (data ?? []).map((row) => mapSession(row as SessionRow)) });
@@ -227,11 +240,12 @@ export const useStudyStore = create<StudyStore>()((set, get) => ({
 
   fetchSubjects: async () => {
     try {
-      requireUser(get().userId);
+      const uid = requireUser(get().userId);
       const supabase = createClient();
       const { data, error } = await supabase
         .from("subjects")
         .select("id,user_id,name,color,weekly_goal,created_at")
+        .eq("user_id", uid)
         .order("created_at", { ascending: true });
       if (error) throw error;
       set({ subjects: (data ?? []).map((row) => mapSubject(row as SubjectRow)) });
@@ -252,6 +266,46 @@ export const useStudyStore = create<StudyStore>()((set, get) => ({
       set({ friendships: (data ?? []).map((row) => mapFriendship(row as FriendshipRow)) });
     } catch (e) {
       set({ error: (e as Error).message });
+    }
+  },
+
+  fetchFriendPresence: async () => {
+    const { userId, friendships } = get();
+    if (!userId) { set({ friendPresence: [] }); return; }
+
+    const friendIds = friendships
+      .filter((f) => f.status === "accepted")
+      .map((f) => (f.userId === userId ? f.friendId : f.userId));
+
+    if (friendIds.length === 0) { set({ friendPresence: [] }); return; }
+
+    try {
+      const supabase = createClient();
+      const COLORS = ["#F5C044","#2dd4bf","#a78bfa","#f472b6","#34d399","#60a5fa","#fb7185"];
+
+      const [{ data: profiles }, { data: activeSessions }] = await Promise.all([
+        supabase.from("users").select("id,name,email").in("id", friendIds),
+        supabase
+          .from("sessions")
+          .select("user_id,subject_id")
+          .in("user_id", friendIds)
+          .eq("duration", 0)
+          .gte("started_at", new Date(Date.now() - 4 * 60 * 60 * 1000).toISOString()),
+      ]);
+
+      const activeMap = new Map((activeSessions ?? []).map((s) => [s.user_id as string, s.subject_id as string | null]));
+
+      set({
+        friendPresence: (profiles ?? []).map((p, i) => ({
+          id: p.id as string,
+          name: (p.name as string) ?? (p.email as string)?.split("@")[0] ?? "Ami",
+          color: COLORS[i % COLORS.length],
+          studying: activeMap.has(p.id as string),
+          subjectLabel: undefined,
+        })),
+      });
+    } catch {
+      set({ friendPresence: [] });
     }
   },
 

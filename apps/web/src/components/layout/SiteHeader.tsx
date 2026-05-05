@@ -2,9 +2,9 @@
 
 import { usePathname, useRouter } from "next/navigation";
 import { motion } from "framer-motion";
-import { Menu, Play, Flame, LogOut, User } from "lucide-react";
+import { Menu, Play, Flame, LogOut, User, Users } from "lucide-react";
 import { useUIStore } from "@/store/useUIStore";
-import { useStudyStore } from "@/store/useStudyStore";
+import { useStudyStore, FriendPresenceData } from "@/store/useStudyStore";
 import { useAuthStore } from "@/store/useAuthStore";
 import { calculateStreak } from "@/lib/utils";
 import { getLevelProgress, calculateXP } from "@/lib/xp";
@@ -20,6 +20,100 @@ const PAGE_TITLES: Record<string, string> = {
   "/social": "Social",
 };
 
+function FriendPresence({ friends, onInvite }: { friends: FriendPresenceData[]; onInvite: () => void }) {
+  const online = friends.filter((f) => f.studying);
+
+  return (
+    <div className="relative group hidden md:block">
+      <button className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg bg-white/[0.04] border border-white/[0.06] hover:border-white/10 transition-colors">
+        {friends.length > 0 ? (
+          <div className="flex -space-x-1">
+            {friends.slice(0, 3).map((f, i) => (
+              <div
+                key={f.id}
+                className="relative w-5 h-5 rounded-full flex items-center justify-center text-[9px] font-bold text-white ring-1 ring-[#0B0F1A]"
+                style={{ backgroundColor: f.color + "40", zIndex: 10 - i }}
+              >
+                {f.name[0].toUpperCase()}
+                {f.studying && (
+                  <span className="absolute -bottom-0.5 -right-0.5 w-2 h-2 rounded-full bg-emerald-400 border border-[#0B0F1A]" />
+                )}
+              </div>
+            ))}
+          </div>
+        ) : (
+          <Users size={13} className="text-slate-500" />
+        )}
+        <span className="text-xs font-medium text-slate-400">
+          {friends.length === 0 ? "Amis" : `${online.length} en session`}
+        </span>
+      </button>
+
+      <div className="absolute right-0 top-full mt-2 w-52 bg-[#161d2e] border border-white/10 rounded-xl shadow-2xl overflow-hidden opacity-0 group-hover:opacity-100 pointer-events-none group-hover:pointer-events-auto transition-all duration-200 z-50 translate-y-1 group-hover:translate-y-0">
+        <div className="px-3 py-2 border-b border-white/[0.06]">
+          <p className="text-[10px] font-semibold text-slate-500 uppercase tracking-wider">
+            Amis — activité
+          </p>
+        </div>
+
+        {friends.length === 0 ? (
+          <div className="px-3 py-4 flex flex-col items-center gap-2">
+            <p className="text-xs text-slate-500 text-center">Aucun ami pour l&apos;instant</p>
+            <button
+              onClick={onInvite}
+              className="text-[10px] text-[#F5C044] hover:text-[#f7cb6a] font-medium transition-colors"
+            >
+              Aller sur Social →
+            </button>
+          </div>
+        ) : (
+          <>
+            {friends.map((friend, i) => (
+              <motion.div
+                key={friend.id}
+                initial={{ opacity: 0, x: -6 }}
+                animate={{ opacity: 1, x: 0 }}
+                transition={{ delay: i * 0.06 }}
+                className="flex items-center gap-3 px-3 py-2.5 hover:bg-white/[0.03] transition-colors"
+              >
+                <div className="relative">
+                  <div
+                    className="w-7 h-7 rounded-lg flex items-center justify-center text-xs font-bold text-white"
+                    style={{ backgroundColor: friend.color + "25" }}
+                  >
+                    {friend.name[0].toUpperCase()}
+                  </div>
+                  <span
+                    className={`absolute -bottom-0.5 -right-0.5 w-2.5 h-2.5 rounded-full border-2 border-[#161d2e] ${
+                      friend.studying ? "bg-emerald-400" : "bg-slate-600"
+                    }`}
+                  />
+                </div>
+                <div className="flex-1 min-w-0">
+                  <p className="text-xs font-semibold text-white">{friend.name}</p>
+                  <p className="text-[10px] text-slate-500">
+                    {friend.studying ? "En session" : "Inactif"}
+                  </p>
+                </div>
+                {friend.studying && (
+                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse flex-shrink-0" />
+                )}
+              </motion.div>
+            ))}
+            <div className="px-3 py-2 border-t border-white/[0.06]">
+              <button
+                onClick={onInvite}
+                className="text-[10px] text-slate-500 hover:text-[#F5C044] transition-colors w-full text-center"
+              >
+                + Inviter des amis
+              </button>
+            </div>
+          </>
+        )}
+      </div>
+    </div>
+  );
+}
 
 export function SiteHeader() {
   const pathname = usePathname();
@@ -27,6 +121,7 @@ export function SiteHeader() {
   const setMobileOpen = useUIStore((s) => s.setMobileOpen);
   const sessions = useStudyStore((s) => s.sessions);
   const timerStatus = useStudyStore((s) => s.status);
+  const friendPresence = useStudyStore((s) => s.friendPresence);
   const user = useAuthStore((s) => s.user);
   const logout = useAuthStore((s) => s.logout);
 
@@ -64,6 +159,9 @@ export function SiteHeader() {
 
       {/* Right */}
       <div className="flex items-center gap-2 sm:gap-2.5">
+        {/* Friend presence */}
+        <FriendPresence friends={friendPresence} onInvite={() => router.push("/social")} />
+
         {/* Streak badge */}
         {streak > 0 && (
           <div className="hidden sm:flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-orange-500/10 border border-orange-500/20">
