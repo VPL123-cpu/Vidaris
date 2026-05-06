@@ -1,7 +1,7 @@
 "use client";
 
-import { useState, useEffect } from "react";
-import { useRouter } from "next/navigation";
+import { useState, useEffect, Suspense } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { motion } from "framer-motion";
 import { GraduationCap, Mail, Lock, User, Eye, EyeOff } from "lucide-react";
@@ -9,8 +9,9 @@ import { useAuthStore } from "@/store/useAuthStore";
 import { useToastStore } from "@/store/useToastStore";
 import { GlowButton } from "@/components/ui/GlowButton";
 
-export default function SignupPage() {
+function SignupForm() {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const { signup, isLoading, error, clearError, user } = useAuthStore();
   const addToast = useToastStore((s) => s.addToast);
 
@@ -19,9 +20,11 @@ export default function SignupPage() {
   const [password, setPassword] = useState("");
   const [showPwd, setShowPwd] = useState(false);
 
+  const redirectTo = searchParams.get("next") ?? "/dashboard";
+
   useEffect(() => {
-    if (user) router.replace("/dashboard");
-  }, [user, router]);
+    if (user) router.replace(redirectTo);
+  }, [user, router, redirectTo]);
 
   useEffect(() => {
     if (error) {
@@ -34,7 +37,7 @@ export default function SignupPage() {
     e.preventDefault();
     await signup(email, name, password);
     if (useAuthStore.getState().user) {
-      window.location.replace("/dashboard");
+      window.location.replace(redirectTo);
     }
   }
 
@@ -146,5 +149,13 @@ export default function SignupPage() {
         </p>
       </motion.div>
     </div>
+  );
+}
+
+export default function SignupPage() {
+  return (
+    <Suspense>
+      <SignupForm />
+    </Suspense>
   );
 }

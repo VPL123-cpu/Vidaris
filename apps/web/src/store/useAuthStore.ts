@@ -3,7 +3,7 @@
 import { create } from "zustand";
 import { AppUser } from "@/types";
 import { createClient } from "@/lib/supabase/client";
-import { getCurrentUser, signIn, signOut, signUp } from "@/lib/auth";
+import { getCurrentUser, signIn, signOut, signUp, getAuthErrorMessage } from "@/lib/auth";
 import { useStudyStore } from "./useStudyStore";
 
 interface AuthStore {
@@ -19,6 +19,8 @@ interface AuthStore {
   clearError: () => void;
 }
 
+let _authSubscription: { unsubscribe: () => void } | null = null;
+
 export const useAuthStore = create<AuthStore>()((set) => ({
   user: null,
   isLoading: false,
@@ -32,18 +34,20 @@ export const useAuthStore = create<AuthStore>()((set) => ({
       set({ user, initialized: true, isLoading: false });
       await useStudyStore.getState().hydrate(user?.id ?? null);
 
+      _authSubscription?.unsubscribe();
       const supabase = createClient();
-      supabase.auth.onAuthStateChange(async () => {
+      const { data: { subscription } } = supabase.auth.onAuthStateChange(async () => {
         const refreshedUser = await getCurrentUser().catch(() => null);
         set({ user: refreshedUser });
         await useStudyStore.getState().hydrate(refreshedUser?.id ?? null);
       });
+      _authSubscription = subscription;
     } catch (e) {
       set({
         user: null,
         initialized: true,
         isLoading: false,
-        error: (e as Error).message,
+        error: getAuthErrorMessage(e as Error),
       });
       await useStudyStore.getState().hydrate(null);
     }
@@ -54,9 +58,8 @@ export const useAuthStore = create<AuthStore>()((set) => ({
     try {
       const user = await signIn(email, password);
       set({ user, isLoading: false });
-      await useStudyStore.getState().hydrate(user.id);
     } catch (e) {
-      set({ error: (e as Error).message, isLoading: false });
+      set({ error: getAuthErrorMessage(e as Error), isLoading: false });
     }
   },
 
@@ -65,9 +68,8 @@ export const useAuthStore = create<AuthStore>()((set) => ({
     try {
       const user = await signUp(email, password, name);
       set({ user, isLoading: false });
-      await useStudyStore.getState().hydrate(user?.id ?? null);
     } catch (e) {
-      set({ error: (e as Error).message, isLoading: false });
+      set({ error: getAuthErrorMessage(e as Error), isLoading: false });
     }
   },
 
@@ -78,7 +80,7 @@ export const useAuthStore = create<AuthStore>()((set) => ({
       set({ user: null, isLoading: false });
       await useStudyStore.getState().hydrate(null);
     } catch (e) {
-      set({ error: (e as Error).message, isLoading: false });
+      set({ error: getAuthErrorMessage(e as Error), isLoading: false });
     }
   },
 

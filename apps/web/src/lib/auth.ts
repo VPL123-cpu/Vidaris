@@ -13,6 +13,26 @@ function toAppUser(user: {
   };
 }
 
+export function getAuthErrorMessage(error: Error): string {
+  const msg = error.message.toLowerCase();
+  if (msg.includes("invalid login credentials") || msg.includes("invalid email or password")) {
+    return "Email ou mot de passe incorrect.";
+  }
+  if (msg.includes("user already registered") || msg.includes("already been registered")) {
+    return "Un compte existe déjà avec cet email.";
+  }
+  if (msg.includes("password should be at least")) {
+    return "Le mot de passe doit contenir au moins 6 caractères.";
+  }
+  if (msg.includes("too many requests") || msg.includes("rate limit")) {
+    return "Trop de tentatives. Réessaie dans quelques minutes.";
+  }
+  if (msg.includes("email not confirmed")) {
+    return "Confirme ton email avant de te connecter.";
+  }
+  return "Une erreur est survenue. Réessaie.";
+}
+
 export async function getCurrentUser(): Promise<AppUser | null> {
   const supabase = createClient();
   const {

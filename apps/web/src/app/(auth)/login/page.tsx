@@ -1,7 +1,7 @@
 "use client";
 
-import { useState, useEffect } from "react";
-import { useRouter } from "next/navigation";
+import { useState, useEffect, Suspense } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { motion } from "framer-motion";
 import { GraduationCap, Mail, Lock, Eye, EyeOff } from "lucide-react";
@@ -9,8 +9,9 @@ import { useAuthStore } from "@/store/useAuthStore";
 import { useToastStore } from "@/store/useToastStore";
 import { GlowButton } from "@/components/ui/GlowButton";
 
-export default function LoginPage() {
+function LoginForm() {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const { login, isLoading, error, clearError, user } = useAuthStore();
   const addToast = useToastStore((s) => s.addToast);
 
@@ -18,9 +19,11 @@ export default function LoginPage() {
   const [password, setPassword] = useState("");
   const [showPwd, setShowPwd] = useState(false);
 
+  const redirectTo = searchParams.get("next") ?? "/dashboard";
+
   useEffect(() => {
-    if (user) router.replace("/dashboard");
-  }, [user, router]);
+    if (user) router.replace(redirectTo);
+  }, [user, router, redirectTo]);
 
   useEffect(() => {
     if (error) {
@@ -33,7 +36,7 @@ export default function LoginPage() {
     e.preventDefault();
     await login(email, password);
     if (useAuthStore.getState().user) {
-      window.location.replace("/dashboard");
+      window.location.replace(redirectTo);
     }
   }
 
@@ -127,8 +130,15 @@ export default function LoginPage() {
             Créer un compte
           </Link>
         </p>
-
       </motion.div>
     </div>
+  );
+}
+
+export default function LoginPage() {
+  return (
+    <Suspense>
+      <LoginForm />
+    </Suspense>
   );
 }
