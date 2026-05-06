@@ -15,6 +15,9 @@ export function SaasLayout({ children }: { children: ReactNode }) {
   const pathname = usePathname();
   const initialize = useAuthStore((s) => s.initialize);
   const initialized = useAuthStore((s) => s.initialized);
+  const user = useAuthStore((s) => s.user);
+  const hydrate = useStudyStore((s) => s.hydrate);
+  const isHydrating = useStudyStore((s) => s.isHydrating);
   const studyError = useStudyStore((s) => s.error);
   const addToast = useToastStore((s) => s.addToast);
 
@@ -23,10 +26,14 @@ export function SaasLayout({ children }: { children: ReactNode }) {
   }, [initialize]);
 
   useEffect(() => {
+    if (initialized) hydrate(user?.id ?? null);
+  }, [initialized, user?.id, hydrate]);
+
+  useEffect(() => {
     if (studyError) addToast(studyError, "error");
   }, [studyError, addToast]);
 
-  if (!initialized) {
+  if (!initialized || isHydrating) {
     return (
       <div className="flex h-screen items-center justify-center bg-[#0B0F1A]">
         <div className="w-6 h-6 rounded-full border-2 border-[#F5C044]/30 border-t-[#F5C044] animate-spin" />
