@@ -74,6 +74,7 @@ export async function signIn(email: string, password: string): Promise<AppUser> 
 
 export async function signOut(): Promise<void> {
   const supabase = createClient();
-  const { error } = await supabase.auth.signOut();
+  // scope: 'local' clears the session immediately without waiting for the server API call
+  const { error } = await supabase.auth.signOut({ scope: "local" });
   if (error) throw error;
 }
