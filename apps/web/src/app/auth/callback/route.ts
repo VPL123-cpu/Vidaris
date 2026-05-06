@@ -24,8 +24,12 @@ export async function GET(request: NextRequest) {
         },
       }
     );
+    const type = searchParams.get("type");
     const { error } = await supabase.auth.exchangeCodeForSession(code);
-    if (!error) return NextResponse.redirect(`${origin}${next}`);
+    if (!error) {
+      const redirectPath = type === "recovery" ? "/update-password" : next;
+      return NextResponse.redirect(`${origin}${redirectPath}`);
+    }
   }
 
   return NextResponse.redirect(`${origin}/login?error=auth_callback_failed`);

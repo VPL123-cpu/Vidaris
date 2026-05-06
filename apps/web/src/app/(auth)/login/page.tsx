@@ -130,6 +130,12 @@ function LoginForm() {
             Créer un compte
           </Link>
         </p>
+
+        <p className="text-center text-xs text-slate-600 mt-2">
+          <Link href="/forgot-password" className="hover:text-slate-400 transition-colors">
+            Mot de passe oublié ?
+          </Link>
+        </p>
       </motion.div>
     </div>
   );
