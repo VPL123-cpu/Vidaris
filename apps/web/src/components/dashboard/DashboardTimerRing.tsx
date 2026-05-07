@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { motion, AnimatePresence } from "framer-motion";
+import { motion } from "framer-motion";
 import { useRouter } from "next/navigation";
 import { Play, Pause, Timer, Coffee, RotateCcw, ArrowRight, Zap } from "lucide-react";
 import { useStudyStore } from "@/store/useStudyStore";
@@ -10,8 +10,6 @@ import { getSubjectFromList } from "@/lib/subjects";
 import { SubjectPickerModal } from "@/components/timer/SubjectPickerModal";
 
 const DAILY_GOAL_SECONDS = 4 * 3600;
-const RADIUS = 72;
-const CIRCUMFERENCE = 2 * Math.PI * RADIUS;
 
 export function DashboardTimerRing() {
   const router = useRouter();
@@ -33,32 +31,21 @@ export function DashboardTimerRing() {
   const subject = getSubjectFromList(subjects, selectedSubjectId);
   const isRunning = status === "running";
   const isPaused = status === "paused";
-  const isIdle = status === "idle";
   const isBreak = pomodoroPhase !== "work";
 
-  let progressRatio = 0;
   let displayTime = "";
   let phaseLabel = "";
 
   if (mode === "chrono") {
-    progressRatio = Math.min(elapsed / DAILY_GOAL_SECONDS, 1);
-    displayTime = elapsed === 0 ? "00:00" : formatTime(elapsed);
+    displayTime = formatTime(elapsed);
     phaseLabel = "chrono";
   } else {
-    const phaseTotal =
-      pomodoroPhase === "work"
-        ? pomodoroConfig.workDuration
-        : pomodoroPhase === "shortBreak"
-        ? pomodoroConfig.shortBreak
-        : pomodoroConfig.longBreak;
-    progressRatio = phaseTotal > 0 ? 1 - remaining / phaseTotal : 0;
     displayTime = formatTime(remaining > 0 ? remaining : pomodoroConfig.workDuration);
     phaseLabel = isBreak
       ? pomodoroPhase === "longBreak" ? "grande pause" : "pause"
       : "focus";
   }
 
-  const dashOffset = CIRCUMFERENCE * (1 - progressRatio);
   const accentColor =
     hardcoreMode && isRunning && !isBreak
       ? "#ef4444"
@@ -68,10 +55,10 @@ export function DashboardTimerRing() {
       ? "#2dd4bf"
       : subject?.color ?? "#F5C044";
 
-  const lastSession = sessions.length > 0 ? sessions[sessions.length - 1] : null;
+  // Dernière session avec durée > 0
+  const lastSession = [...sessions].reverse().find((s) => s.duration > 0) ?? null;
   const lastSubject = lastSession ? getSubjectFromList(subjects, lastSession.subjectId) : null;
 
-  // Calcul progression journalière
   const todayKey = new Date().toISOString().split("T")[0];
   const todaySessions = sessions.filter((s) => s.date === todayKey);
   const todaySeconds = todaySessions.reduce((acc, s) => acc + s.duration, 0) + (isRunning ? elapsed : 0);
@@ -122,11 +109,13 @@ export function DashboardTimerRing() {
             />
             <h3 className="text-sm font-semibold text-white">Timer</h3>
             {hardcoreMode && (
-              <span className="text-[9px] font-bold text-red-400 uppercase tracking-wide px-1.5 py-0.5 bg-red-500/10 rounded-md">HC</span>
+              <span className="text-[9px] font-bold text-red-400 uppercase tracking-wide px-1.5 py-0.5 bg-red-500/10 rounded-md">
+                HC
+              </span>
             )}
           </div>
 
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-2.5">
             {isRunning && (
               <span className="flex items-center gap-1.5 text-xs font-semibold text-emerald-400">
                 <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
@@ -136,14 +125,13 @@ export function DashboardTimerRing() {
             {isPaused && (
               <span className="text-xs text-slate-500 font-medium">En pause</span>
             )}
-            {/* Mode switch dans le header */}
             {!isRunning && (
               <div className="flex gap-0.5 p-0.5 bg-white/[0.04] rounded-lg border border-white/[0.05]">
                 {(["pomodoro", "chrono"] as const).map((m) => (
                   <button
                     key={m}
                     onClick={() => handleModeSwitch(m)}
-                    className={`px-3 py-1 rounded-md text-[11px] font-semibold transition-all ${
+                    className={`px-2.5 py-0.5 rounded-md text-[11px] font-semibold transition-all ${
                       mode === m ? "bg-[#F5C044] text-[#0B0F1A]" : "text-slate-500 hover:text-slate-300"
                     }`}
                   >
@@ -161,149 +149,124 @@ export function DashboardTimerRing() {
           </div>
         </div>
 
-        {/* Corps : ring + info */}
-        <div className="p-5">
-          <div className="flex items-center gap-6">
-            {/* Ring SVG */}
-            <div className="relative flex-shrink-0">
-              <div
-                className="absolute inset-0 rounded-full blur-2xl opacity-20 pointer-events-none"
-                style={{ background: `radial-gradient(circle, ${accentColor} 0%, transparent 70%)` }}
+        {/* Corps */}
+        <div className="p-5 space-y-4">
+          {/* Matière + temps en cours */}
+          <div className="flex items-center justify-between gap-3">
+            <div className="flex items-center gap-2.5 min-w-0">
+              <span
+                className="w-2.5 h-2.5 rounded-full flex-shrink-0"
+                style={{
+                  backgroundColor: subject?.color ?? "#64748b",
+                  boxShadow: subject?.color ? `0 0 6px ${subject.color}80` : "none",
+                }}
               />
-              <svg width={168} height={168} viewBox="0 0 168 168" className="-rotate-90">
-                <circle
-                  cx={84} cy={84} r={RADIUS}
-                  fill="none"
-                  stroke="rgba(255,255,255,0.05)"
-                  strokeWidth={8}
-                />
-                <motion.circle
-                  cx={84} cy={84} r={RADIUS}
-                  fill="none"
-                  stroke={accentColor}
-                  strokeWidth={8}
-                  strokeLinecap="round"
-                  strokeDasharray={CIRCUMFERENCE}
-                  animate={{ strokeDashoffset: dashOffset }}
-                  transition={{ duration: 0.5, ease: "easeOut" }}
-                  style={{ filter: `drop-shadow(0 0 8px ${accentColor}90)` }}
-                />
-                <circle
-                  cx={84} cy={84} r={RADIUS - 14}
-                  fill="none"
-                  stroke={accentColor}
-                  strokeWidth={1}
-                  strokeOpacity={0.07}
-                />
-              </svg>
+              <span className="text-sm font-semibold text-white truncate">
+                {subject?.label ?? "Aucune matière"}
+              </span>
+            </div>
 
-              {/* Contenu du ring */}
-              <div className="absolute inset-0 flex flex-col items-center justify-center gap-1">
-                {isBreak && isRunning && <Coffee size={14} className="text-[#2dd4bf]" />}
+            {/* Temps affiché comme badge quand actif */}
+            {(isRunning || isPaused) && (
+              <div className="flex items-center gap-1.5 flex-shrink-0">
+                {isBreak && <Coffee size={12} className="text-[#2dd4bf]" />}
                 <span
-                  className="text-2xl font-bold tabular-nums leading-none"
-                  style={{ color: isRunning ? accentColor : "white" }}
+                  className="text-sm font-bold tabular-nums"
+                  style={{ color: accentColor }}
                 >
                   {displayTime}
                 </span>
-                <span className="text-[9px] text-slate-500 uppercase tracking-widest">{phaseLabel}</span>
-              </div>
-            </div>
-
-            {/* Infos + CTA */}
-            <div className="flex-1 min-w-0 flex flex-col gap-3">
-              {/* Matière active */}
-              <div className="flex items-center gap-2.5">
-                <span
-                  className="w-3 h-3 rounded-full flex-shrink-0"
-                  style={{
-                    backgroundColor: subject?.color ?? "#64748b",
-                    boxShadow: subject?.color ? `0 0 8px ${subject.color}80` : "none",
-                  }}
-                />
-                <span className="text-base font-semibold text-white truncate">
-                  {subject?.label ?? "Aucune matière sélectionnée"}
+                <span className="text-[10px] text-slate-500 uppercase tracking-wider">
+                  {phaseLabel}
                 </span>
               </div>
+            )}
+          </div>
 
-              {isRunning && mode === "pomodoro" && !isBreak && (
-                <p className="text-sm text-slate-500">
-                  {Math.floor(remaining / 60)} min restantes · focus
-                </p>
-              )}
-              {isRunning && mode === "chrono" && (
-                <p className="text-sm text-slate-500">Chrono en cours</p>
-              )}
+          {/* Info phase pomodoro */}
+          {isRunning && mode === "pomodoro" && !isBreak && (
+            <p className="text-xs text-slate-500 -mt-1">
+              {Math.floor(remaining / 60)} min restantes · focus
+            </p>
+          )}
+          {isRunning && mode === "chrono" && (
+            <p className="text-xs text-slate-500 -mt-1 flex items-center gap-1">
+              <Zap size={10} className="text-[#F5C044]/60" />
+              2 XP / min
+            </p>
+          )}
 
-              {/* Progression journalière */}
-              <div className="space-y-1">
-                <div className="flex justify-between text-xs text-slate-500">
-                  <span>Aujourd&apos;hui</span>
-                  <span className="text-white font-medium">
-                    {formatDuration(Math.floor(todaySeconds / 60))} / 4h
-                  </span>
-                </div>
-                <div className="h-1.5 bg-white/5 rounded-full overflow-hidden">
-                  <motion.div
-                    animate={{ width: `${todayPct}%` }}
-                    transition={{ duration: 0.6 }}
-                    className="h-full rounded-full"
-                    style={{ backgroundColor: accentColor, boxShadow: `0 0 8px ${accentColor}50` }}
-                  />
-                </div>
-              </div>
-
-              {/* Bouton principal */}
-              <motion.button
-                whileHover={{ scale: 1.02 }}
-                whileTap={{ scale: 0.97 }}
-                onClick={handleLaunch}
-                className={`flex items-center justify-center gap-2 py-2.5 rounded-xl text-sm font-bold transition-all ${
-                  isRunning
-                    ? "bg-white/[0.05] border border-white/[0.08] text-slate-300 hover:bg-white/[0.08]"
-                    : hardcoreMode
-                    ? "bg-red-500/20 border border-red-500/30 text-red-400 hover:bg-red-500/25"
-                    : "bg-[#F5C044] text-[#0B0F1A] shadow-[0_0_16px_rgba(245,192,68,0.25)] hover:shadow-[0_0_24px_rgba(245,192,68,0.4)] hover:bg-[#f7cb6a]"
-                }`}
-              >
-                {isRunning ? (
-                  <><Pause size={14} /> Pause</>
-                ) : isPaused ? (
-                  <><Play size={14} fill="currentColor" /> Reprendre</>
-                ) : (
-                  <><Play size={14} fill="currentColor" /> Lancer</>
-                )}
-              </motion.button>
-
-              {/* Dernière session */}
-              {lastSession && lastSubject && !isRunning && (
-                <div className="flex items-center justify-between gap-2 text-[11px]">
-                  <div className="flex items-center gap-1.5 min-w-0 text-slate-600">
-                    <span
-                      className="w-1.5 h-1.5 rounded-full flex-shrink-0"
-                      style={{ backgroundColor: lastSubject.color }}
-                    />
-                    <span className="truncate">
-                      {lastSubject.label} · {formatDuration(Math.floor(lastSession.duration / 60))}
-                    </span>
-                  </div>
-                  <button
-                    onClick={() => router.push("/timer")}
-                    className="flex items-center gap-1 text-slate-600 hover:text-[#F5C044] transition-colors flex-shrink-0"
-                  >
-                    <RotateCcw size={9} /> Relancer
-                  </button>
-                </div>
-              )}
+          {/* Progression journalière */}
+          <div className="space-y-1.5">
+            <div className="flex justify-between text-xs text-slate-500">
+              <span>Aujourd&apos;hui</span>
+              <span className="font-medium" style={{ color: todayPct >= 100 ? "#34d399" : "white" }}>
+                {formatDuration(Math.floor(todaySeconds / 60))}
+                <span className="text-slate-600"> / 4h</span>
+              </span>
+            </div>
+            <div className="h-1.5 bg-white/5 rounded-full overflow-hidden">
+              <motion.div
+                animate={{ width: `${todayPct}%` }}
+                transition={{ duration: 0.6 }}
+                className="h-full rounded-full"
+                style={{
+                  backgroundColor: accentColor,
+                  boxShadow: todayPct > 0 ? `0 0 8px ${accentColor}50` : "none",
+                }}
+              />
             </div>
           </div>
+
+          {/* Bouton principal */}
+          <motion.button
+            whileHover={{ scale: 1.02 }}
+            whileTap={{ scale: 0.97 }}
+            onClick={handleLaunch}
+            className={`w-full flex items-center justify-center gap-2 py-2.5 rounded-xl text-sm font-bold transition-all ${
+              isRunning
+                ? "bg-white/[0.05] border border-white/[0.08] text-slate-300 hover:bg-white/[0.08]"
+                : hardcoreMode
+                ? "bg-red-500/20 border border-red-500/30 text-red-400 hover:bg-red-500/25"
+                : "bg-[#F5C044] text-[#0B0F1A] shadow-[0_0_16px_rgba(245,192,68,0.2)] hover:bg-[#f7cb6a]"
+            }`}
+          >
+            {isRunning ? (
+              <><Pause size={14} /> Gérer</>
+            ) : isPaused ? (
+              <><Play size={14} fill="currentColor" /> Reprendre</>
+            ) : (
+              <><Play size={14} fill="currentColor" /> Lancer</>
+            )}
+          </motion.button>
+
+          {/* Dernière session */}
+          {lastSession && lastSubject && !isRunning && (
+            <div className="flex items-center justify-between gap-2 text-[11px]">
+              <div className="flex items-center gap-1.5 min-w-0 text-slate-600">
+                <span
+                  className="w-1.5 h-1.5 rounded-full flex-shrink-0"
+                  style={{ backgroundColor: lastSubject.color }}
+                />
+                <span className="truncate">
+                  {lastSubject.label} · {formatDuration(Math.floor(lastSession.duration / 60))}
+                </span>
+              </div>
+              <button
+                onClick={() => router.push("/timer")}
+                className="flex items-center gap-1 text-slate-600 hover:text-[#F5C044] transition-colors flex-shrink-0"
+              >
+                <RotateCcw size={9} /> Relancer
+              </button>
+            </div>
+          )}
         </div>
 
-        {/* Barre de statut en bas */}
+        {/* Barre de statut */}
         {isRunning && (
           <div
             className="h-0.5 w-full"
-            style={{ background: `linear-gradient(90deg, ${accentColor}80, ${accentColor}20)` }}
+            style={{ background: `linear-gradient(90deg, ${accentColor}80, ${accentColor}10)` }}
           />
         )}
       </motion.div>
