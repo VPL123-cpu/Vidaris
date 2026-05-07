@@ -1,7 +1,7 @@
 "use client";
 
 import { PageContainer } from "@/components/layout/PageContainer";
-import { DashboardKpisCompact } from "@/components/dashboard/DashboardKpis";
+import { DashboardKpisRow } from "@/components/dashboard/DashboardKpis";
 import { DashboardChart } from "@/components/dashboard/DashboardChart";
 import { DashboardSubjects } from "@/components/dashboard/DashboardSubjects";
 import { DashboardLeaderboard } from "@/components/dashboard/DashboardLeaderboard";
@@ -9,27 +9,24 @@ import { DashboardTimerRing } from "@/components/dashboard/DashboardTimerRing";
 
 export default function DashboardPage() {
   return (
-    <PageContainer maxWidth="xl">
-      <div className="space-y-5">
-        {/* Header : titre + KPIs compacts côte à côte */}
-        <div className="flex flex-col lg:flex-row lg:items-start lg:justify-between gap-4">
-          <div className="flex-shrink-0">
-            <h2 className="text-xl font-bold text-white">Bonne journée 👋</h2>
-            <p className="text-slate-400 text-sm mt-0.5">
-              Voici un aperçu de ta progression cette semaine.
-            </p>
-          </div>
-          <div className="lg:w-[480px] xl:w-[520px]">
-            <DashboardKpisCompact />
-          </div>
-        </div>
+    <PageContainer maxWidth="2xl">
+      <div className="space-y-4">
+        {/* 4 KPIs en ligne */}
+        <DashboardKpisRow />
 
-        {/* Main grid — 2×2 */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
-          <DashboardChart />
-          <DashboardTimerRing />
-          <DashboardSubjects />
-          <DashboardLeaderboard />
+        {/* Grid principal : gauche 40% (chart + matières), droite 60% (timer + classement) */}
+        <div className="grid grid-cols-1 lg:grid-cols-5 gap-4 items-start">
+          {/* Colonne gauche : Activité + Matières cette semaine */}
+          <div className="lg:col-span-2 flex flex-col gap-4">
+            <DashboardChart />
+            <DashboardSubjects />
+          </div>
+
+          {/* Colonne droite : Timer (en haut) + Classement */}
+          <div className="lg:col-span-3 flex flex-col gap-4">
+            <DashboardTimerRing />
+            <DashboardLeaderboard />
+          </div>
         </div>
       </div>
     </PageContainer>

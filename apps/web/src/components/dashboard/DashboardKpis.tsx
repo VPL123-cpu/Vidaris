@@ -31,7 +31,7 @@ function useKpis() {
   return [
     {
       icon: Clock,
-      label: "Temps cette semaine",
+      label: "Cette semaine",
       value: formatDuration(weekTotal),
       sub: `Aujourd'hui : ${formatDuration(todayMinutes)}`,
       iconColor: "#F5C044",
@@ -39,45 +39,45 @@ function useKpis() {
     },
     {
       icon: Flame,
-      label: "Série en cours",
-      value: `${streak} jour${streak > 1 ? "s" : ""}`,
-      sub: streak > 5 ? "Continue comme ça !" : "Objectif : 7 jours",
+      label: "Série",
+      value: `${streak}j`,
+      sub: streak > 5 ? "En feu !" : "Objectif : 7j",
       iconColor: "#f97316",
       iconBg: "rgba(249,115,22,0.12)",
     },
     {
       icon: CalendarCheck,
       label: "Jours validés",
-      value: `${daysValidated} / ${totalDaysThisWeek}`,
-      sub: daysValidated === totalDaysThisWeek ? "Semaine parfaite !" : `${totalDaysThisWeek - daysValidated} jour(s) manqués`,
+      value: `${daysValidated}/${totalDaysThisWeek}`,
+      sub: daysValidated === totalDaysThisWeek ? "Parfait !" : `${totalDaysThisWeek - daysValidated} manqué(s)`,
       iconColor: "#34d399",
       iconBg: "rgba(52,211,153,0.12)",
     },
     {
       icon: TrendingUp,
-      label: "Moyenne quotidienne",
+      label: "Moyenne / jour",
       value: formatDuration(avgMinutes),
-      sub: avgMinutes >= 120 ? "Objectif atteint" : "Objectif : 2h/jour",
+      sub: avgMinutes >= 120 ? "Objectif atteint" : "Obj. : 2h/j",
       iconColor: "#a78bfa",
       iconBg: "rgba(167,139,250,0.12)",
     },
   ];
 }
 
-// Compact variant — affichée à côté du titre
-export function DashboardKpisCompact() {
+// 4 cartes en ligne horizontale (pour le header du dashboard)
+export function DashboardKpisRow() {
   const kpis = useKpis();
 
   return (
-    <div className="grid grid-cols-2 gap-2">
+    <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5">
       {kpis.map((kpi, i) => {
         const Icon = kpi.icon;
         return (
           <motion.div
             key={kpi.label}
-            initial={{ opacity: 0, y: 8 }}
+            initial={{ opacity: 0, y: 6 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.25, delay: i * 0.05 }}
+            transition={{ duration: 0.22, delay: i * 0.04 }}
             className="bg-[#111827] border border-white/[0.06] rounded-xl px-3 py-2.5 flex items-center gap-2.5 hover:border-white/10 transition-colors"
           >
             <div
@@ -87,9 +87,9 @@ export function DashboardKpisCompact() {
               <Icon size={13} style={{ color: kpi.iconColor }} strokeWidth={2} />
             </div>
             <div className="min-w-0">
-              <p className="text-[10px] text-slate-500 leading-tight truncate">{kpi.label}</p>
-              <p className="text-sm font-bold text-white leading-tight">{kpi.value}</p>
-              <p className="text-[10px] text-slate-600 leading-tight truncate">{kpi.sub}</p>
+              <p className="text-[10px] text-slate-500 leading-none truncate">{kpi.label}</p>
+              <p className="text-sm font-bold text-white leading-tight mt-0.5">{kpi.value}</p>
+              <p className="text-[10px] text-slate-600 leading-none mt-0.5 truncate">{kpi.sub}</p>
             </div>
           </motion.div>
         );
@@ -97,3 +97,6 @@ export function DashboardKpisCompact() {
     </div>
   );
 }
+
+// Alias pour compatibilité (plus utilisé sur dashboard mais gardé pour éviter les erreurs d'import)
+export { DashboardKpisRow as DashboardKpisCompact };

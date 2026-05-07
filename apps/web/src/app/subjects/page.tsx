@@ -127,47 +127,49 @@ function SubjectCard({ subject, weekMinutes, totalMinutes, isEditing, onEdit, on
       initial={{ opacity: 0, scale: 0.95 }}
       animate={{ opacity: 1, scale: 1 }}
       exit={{ opacity: 0, scale: 0.9, height: 0 }}
-      className={`bg-[#111827] rounded-2xl p-5 hover:border-white/10 transition-all group border ${
+      className={`bg-[#111827] rounded-xl p-4 hover:border-white/10 transition-all group border ${
         isEditing ? "border-[#F5C044]/30" : "border-white/[0.06]"
       }`}
     >
-      <div className="flex items-start justify-between mb-4">
-        <div className="flex items-center gap-3">
+      {/* Header */}
+      <div className="flex items-center justify-between mb-3">
+        <div className="flex items-center gap-2.5 min-w-0">
           <div
-            className="w-10 h-10 rounded-xl flex items-center justify-center text-base font-bold"
+            className="w-8 h-8 rounded-lg flex items-center justify-center text-sm font-bold flex-shrink-0"
             style={{ backgroundColor: hexToRgba(subject.color, 0.15), color: subject.color }}
           >
             {subject.label.charAt(0)}
           </div>
-          <div>
-            <p className="text-sm font-semibold text-white">{subject.label}</p>
-            <p className="text-xs text-slate-500">Objectif : {formatDuration(subject.goal)}/sem</p>
+          <div className="min-w-0">
+            <p className="text-sm font-semibold text-white truncate">{subject.label}</p>
+            <p className="text-[10px] text-slate-500">Obj. : {formatDuration(subject.goal)}/sem</p>
           </div>
         </div>
-        <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+        <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity flex-shrink-0 ml-2">
           <button
             onClick={onEdit}
-            className="w-7 h-7 flex items-center justify-center rounded-lg text-slate-500 hover:text-white hover:bg-white/10 transition-all"
+            className="w-6 h-6 flex items-center justify-center rounded-lg text-slate-500 hover:text-white hover:bg-white/10 transition-all"
           >
-            <Pencil size={13} />
+            <Pencil size={12} />
           </button>
           <button
             onClick={onDelete}
-            className="w-7 h-7 flex items-center justify-center rounded-lg text-slate-500 hover:text-red-400 hover:bg-red-500/10 transition-all"
+            className="w-6 h-6 flex items-center justify-center rounded-lg text-slate-500 hover:text-red-400 hover:bg-red-500/10 transition-all"
           >
-            <Trash2 size={13} />
+            <Trash2 size={12} />
           </button>
         </div>
       </div>
 
-      <div className="space-y-1.5 mb-4">
-        <div className="flex justify-between text-xs">
+      {/* Progress */}
+      <div className="space-y-1 mb-3">
+        <div className="flex justify-between text-[11px]">
           <span className="text-slate-500">Cette semaine</span>
           <span style={{ color: pct >= 100 ? subject.color : "#94a3b8" }}>
             {formatDuration(weekMinutes)} / {formatDuration(subject.goal)}
           </span>
         </div>
-        <div className="h-2 bg-white/5 rounded-full overflow-hidden">
+        <div className="h-1.5 bg-white/5 rounded-full overflow-hidden">
           <motion.div
             initial={{ width: 0 }}
             animate={{ width: `${pct}%` }}
@@ -175,20 +177,21 @@ function SubjectCard({ subject, weekMinutes, totalMinutes, isEditing, onEdit, on
             className="h-full rounded-full"
             style={{
               backgroundColor: subject.color,
-              boxShadow: pct > 5 ? `0 0 8px ${subject.color}50` : "none",
+              boxShadow: pct > 5 ? `0 0 6px ${subject.color}50` : "none",
             }}
           />
         </div>
       </div>
 
-      <div className="grid grid-cols-2 gap-2 pt-3 border-t border-white/[0.05]">
-        <div className="text-center">
-          <p className="text-xs font-semibold text-slate-300">{formatDuration(weekMinutes)}</p>
-          <p className="text-[10px] text-slate-600">Cette semaine</p>
+      {/* Footer */}
+      <div className="flex items-center justify-between pt-2.5 border-t border-white/[0.05] text-[11px]">
+        <div>
+          <span className="font-semibold text-slate-300">{formatDuration(weekMinutes)}</span>
+          <span className="text-slate-600 ml-1">sem.</span>
         </div>
-        <div className="text-center">
-          <p className="text-xs font-semibold text-slate-300">{formatDuration(totalMinutes)}</p>
-          <p className="text-[10px] text-slate-600">Total</p>
+        <div>
+          <span className="font-semibold text-slate-300">{formatDuration(totalMinutes)}</span>
+          <span className="text-slate-600 ml-1">total</span>
         </div>
       </div>
     </motion.div>
@@ -269,7 +272,7 @@ export default function SubjectsPage() {
         </AnimatePresence>
 
         {/* Grille des cartes */}
-        <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
           <AnimatePresence mode="popLayout">
             {subjects.map((sub) => (
               <SubjectCard
