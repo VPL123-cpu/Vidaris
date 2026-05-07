@@ -219,7 +219,7 @@ export function SiteHeader() {
                   <p className="text-[10px] text-slate-500 truncate">{user.email}</p>
                 </div>
                 <button
-                  onClick={async () => { await logout(); window.location.replace("/login"); }}
+                  onClick={() => { void logout(); window.location.replace("/login"); }}
                   className="flex items-center gap-2 w-full px-3 py-2.5 text-xs text-slate-400 hover:text-red-400 hover:bg-red-500/5 transition-colors"
                 >
                   <LogOut size={13} />

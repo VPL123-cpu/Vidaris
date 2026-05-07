@@ -1,6 +1,7 @@
 "use client";
 
 import { create } from "zustand";
+import type { RealtimeChannel } from "@supabase/supabase-js";
 import { createClient } from "@/lib/supabase/client";
 import {
   Friendship,
@@ -11,6 +12,9 @@ import {
   TimerStatus,
 } from "@/types";
 import { hexToRgba } from "@/lib/subjects";
+
+let _presenceChannel: RealtimeChannel | null = null;
+let _presenceDebounce: ReturnType<typeof setTimeout> | null = null;
 
 const DEFAULT_POMODORO_CONFIG: PomodoroConfig = {
   workDuration: 50 * 60,
@@ -193,6 +197,7 @@ export const useStudyStore = create<StudyStore>()((set, get) => ({
 
   hydrate: async (userId) => {
     if (!userId) {
+      if (_presenceChannel) { void _presenceChannel.unsubscribe(); _presenceChannel = null; }
       set({
         userId: null,
         sessions: [],
@@ -300,15 +305,35 @@ export const useStudyStore = create<StudyStore>()((set, get) => ({
 
       const activeMap = new Map((activeSessions ?? []).map((s) => [s.user_id as string, s.subject_id as string | null]));
 
+      // Resolve subject labels for active friends
+      const subjects = get().subjects;
       set({
-        friendPresence: (profiles ?? []).map((p, i) => ({
-          id: p.id as string,
-          name: (p.name as string) ?? (p.email as string)?.split("@")[0] ?? "Ami",
-          color: COLORS[i % COLORS.length],
-          studying: activeMap.has(p.id as string),
-          subjectLabel: undefined,
-        })),
+        friendPresence: (profiles ?? []).map((p, i) => {
+          const subjectId = activeMap.get(p.id as string);
+          const subjectLabel = subjectId
+            ? subjects.find((s) => s.id === subjectId)?.label
+            : undefined;
+          return {
+            id: p.id as string,
+            name: (p.name as string) ?? (p.email as string)?.split("@")[0] ?? "Ami",
+            color: COLORS[i % COLORS.length],
+            studying: activeMap.has(p.id as string),
+            subjectLabel,
+          };
+        }),
       });
+
+      // Subscribe to real-time session changes if not already subscribed
+      if (!_presenceChannel) {
+        const rtClient = createClient();
+        _presenceChannel = rtClient
+          .channel("friend-sessions-rt")
+          .on("postgres_changes", { event: "*", schema: "public", table: "sessions" }, () => {
+            if (_presenceDebounce) clearTimeout(_presenceDebounce);
+            _presenceDebounce = setTimeout(() => { void get().fetchFriendPresence(); }, 400);
+          })
+          .subscribe();
+      }
     } catch {
       set({ friendPresence: [] });
     }
