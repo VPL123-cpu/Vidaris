@@ -69,7 +69,6 @@ export function TimerPage() {
   const startTimer = useStudyStore((s) => s.startTimer);
   const pauseTimer = useStudyStore((s) => s.pauseTimer);
   const resetTimer = useStudyStore((s) => s.resetTimer);
-  const setSubject = useStudyStore((s) => s.setSubject);
 
   const subject = getSubjectFromList(subjects, selectedSubjectId);
   const subjectColor = subject?.color ?? "#64748b";
@@ -135,9 +134,8 @@ export function TimerPage() {
   }
 
   function handlePickerSelect(subjectId: string) {
-    setSubject(subjectId);
     setShowPicker(false);
-    startTimer();
+    startTimer(subjectId);
   }
 
   const svgSize = 260;

@@ -28,7 +28,6 @@ export function DashboardTimerRing() {
   const pomodoroPhase = useStudyStore((s) => s.pomodoroPhase);
   const sessions = useStudyStore((s) => s.sessions);
   const startTimer = useStudyStore((s) => s.startTimer);
-  const setSubject = useStudyStore((s) => s.setSubject);
   const hardcoreMode = useStudyStore((s) => s.hardcoreMode);
 
   const subject = getSubjectFromList(subjects, selectedSubjectId);
@@ -87,9 +86,8 @@ export function DashboardTimerRing() {
   }
 
   function handlePickerSelect(subjectId: string) {
-    setSubject(subjectId);
     setShowPicker(false);
-    startTimer();
+    startTimer(subjectId);
   }
 
   function handleModeSwitch(m: "pomodoro" | "chrono") {

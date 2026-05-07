@@ -87,7 +87,7 @@ export function KpiCards({ period }: { period: "week" | "month" | "year" }) {
     : 0;
 
   return (
-    <div className="grid grid-cols-2 gap-3">
+    <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
       <KpiCard
         icon={<Clock size={18} />}
         label={`Temps ${period === "week" ? "semaine" : period === "month" ? "mensuel" : "annuel"}`}

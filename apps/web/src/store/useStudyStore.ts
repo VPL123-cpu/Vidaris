@@ -63,7 +63,7 @@ interface StudyStore extends TimerState {
 
   setMode: (mode: TimerMode) => void;
   setSubject: (subjectId: string) => void;
-  startTimer: () => Promise<void>;
+  startTimer: (subjectId?: string) => Promise<void>;
   pauseTimer: () => Promise<void>;
   resetTimer: () => Promise<void>;
   tick: () => void;
@@ -332,11 +332,18 @@ export const useStudyStore = create<StudyStore>()((set, get) => ({
 
   setSubject: (subjectId) => set({ selectedSubjectId: subjectId }),
 
-  startTimer: async () => {
-    const { elapsed, remaining, selectedSubjectId, mode, userId } = get();
-    if (!selectedSubjectId) {
+  startTimer: async (overrideSubjectId?: string) => {
+    const { elapsed, remaining, mode, userId } = get();
+    const subjectId = overrideSubjectId ?? get().selectedSubjectId;
+
+    if (!subjectId) {
       set({ error: "Cree une matiere avant de lancer le timer." });
       return;
+    }
+
+    // Synchronise la matière sélectionnée si on passe un override
+    if (overrideSubjectId) {
+      set({ selectedSubjectId: overrideSubjectId });
     }
 
     try {
@@ -347,7 +354,7 @@ export const useStudyStore = create<StudyStore>()((set, get) => ({
         .from("sessions")
         .insert({
           user_id: uid,
-          subject_id: selectedSubjectId,
+          subject_id: subjectId,
           duration: 0,
           started_at: now,
           mode,
@@ -360,6 +367,7 @@ export const useStudyStore = create<StudyStore>()((set, get) => ({
       set((s) => ({
         sessions: [session, ...s.sessions],
         status: "running",
+        selectedSubjectId: subjectId,
         currentSessionId: session.id,
         currentSessionStart: now,
         timerStartedAt: Date.now(),

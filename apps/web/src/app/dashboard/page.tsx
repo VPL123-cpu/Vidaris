@@ -14,16 +14,16 @@ export default function DashboardPage() {
         {/* 4 KPIs en ligne */}
         <DashboardKpisRow />
 
-        {/* Grid principal : gauche 40% (chart + matières), droite 60% (timer + classement) */}
-        <div className="grid grid-cols-1 lg:grid-cols-5 gap-4 items-start">
-          {/* Colonne gauche : Activité + Matières cette semaine */}
+        {/* Grid principal : gauche 2/3 (chart + matières), droite 1/3 (timer + classement) */}
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 items-start">
+          {/* Colonne gauche — Activité + Matières cette semaine */}
           <div className="lg:col-span-2 flex flex-col gap-4">
             <DashboardChart />
             <DashboardSubjects />
           </div>
 
-          {/* Colonne droite : Timer (en haut) + Classement */}
-          <div className="lg:col-span-3 flex flex-col gap-4">
+          {/* Colonne droite — Timer (en haut) + Classement */}
+          <div className="flex flex-col gap-4">
             <DashboardTimerRing />
             <DashboardLeaderboard />
           </div>
