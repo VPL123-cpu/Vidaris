@@ -391,23 +391,26 @@ export const useStudyStore = create<StudyStore>()((set, get) => ({
   },
 
   pauseTimer: async () => {
-    const { elapsed, currentSessionId } = get();
+    const { elapsed, elapsedAtStart, currentSessionId } = get();
     if (!currentSessionId) {
       set({ status: "paused", currentSessionId: null, currentSessionStart: null, timerStartedAt: null });
       return;
     }
 
+    // Durée réelle de CE segment uniquement (elapsed est le total depuis le tout premier start)
+    const segmentDuration = Math.max(1, elapsed - elapsedAtStart);
+
     try {
       const supabase = createClient();
       const { error } = await supabase
         .from("sessions")
-        .update({ duration: Math.max(0, elapsed) })
+        .update({ duration: segmentDuration })
         .eq("id", currentSessionId);
       if (error) throw error;
 
       set((s) => ({
         sessions: s.sessions.map((session) =>
-          session.id === currentSessionId ? { ...session, duration: Math.max(0, elapsed) } : session
+          session.id === currentSessionId ? { ...session, duration: segmentDuration } : session
         ),
         status: "paused",
         currentSessionId: null,
@@ -420,20 +423,23 @@ export const useStudyStore = create<StudyStore>()((set, get) => ({
   },
 
   stopTimer: async () => {
-    const { elapsed, currentSessionId, mode, pomodoroConfig } = get();
+    const { elapsed, elapsedAtStart, currentSessionId, mode, pomodoroConfig } = get();
+
+    // Durée réelle de CE segment uniquement (elapsed accumule depuis le premier start)
+    const segmentDuration = Math.max(0, elapsed - elapsedAtStart);
 
     if (currentSessionId) {
-      if (elapsed > 0) {
-        // Sauvegarder la durée réelle avant de réinitialiser
+      if (segmentDuration > 0) {
         try {
           const supabase = createClient();
-          await supabase
+          const { error } = await supabase
             .from("sessions")
-            .update({ duration: elapsed })
+            .update({ duration: segmentDuration })
             .eq("id", currentSessionId);
+          if (error) throw error;
           set((s) => ({
             sessions: s.sessions.map((sess) =>
-              sess.id === currentSessionId ? { ...sess, duration: elapsed } : sess
+              sess.id === currentSessionId ? { ...sess, duration: segmentDuration } : sess
             ),
           }));
         } catch (e) {
@@ -444,7 +450,7 @@ export const useStudyStore = create<StudyStore>()((set, get) => ({
         await get().deleteSession(currentSessionId);
       }
     }
-    // Si paused : currentSessionId est null, la durée a déjà été sauvegardée lors de pauseTimer
+    // Si status était "paused" : currentSessionId est null, durée déjà sauvée dans pauseTimer
 
     const remaining = mode === "pomodoro" ? pomodoroConfig.workDuration : 0;
     set({
@@ -458,6 +464,9 @@ export const useStudyStore = create<StudyStore>()((set, get) => ({
       elapsedAtStart: 0,
       remainingAtStart: remaining,
     });
+
+    // Resync depuis Supabase pour garantir que le dashboard et les stats sont à jour
+    await get().fetchSessions();
   },
 
   resetTimer: async () => {
@@ -508,6 +517,8 @@ export const useStudyStore = create<StudyStore>()((set, get) => ({
     }
 
     if (pomodoroPhase === "work") {
+      // Mettre elapsed à jour avant pauseTimer pour que la bonne durée soit sauvée
+      set({ elapsed: newElapsed });
       void get().pauseTimer();
       const newCycles = pomoCyclesCompleted + 1;
       const isLongBreak = newCycles % pomodoroConfig.cyclesBeforeLongBreak === 0;
