@@ -46,10 +46,12 @@ export function getSessionsForDate(sessions: StudySession[], date: string) {
 }
 
 export function getTotalMinutesForDate(sessions: StudySession[], date: string) {
-  return getSessionsForDate(sessions, date).reduce(
-    (acc, s) => acc + Math.floor(s.duration / 60),
+  // Additionner les secondes d'abord puis convertir — évite que 15s+55s=0 au lieu de 1min
+  const totalSeconds = getSessionsForDate(sessions, date).reduce(
+    (acc, s) => acc + s.duration,
     0
   );
+  return Math.floor(totalSeconds / 60);
 }
 
 export function getTotalMinutesForSubject(
@@ -60,9 +62,10 @@ export function getTotalMinutesForSubject(
   const filtered = dates
     ? sessions.filter((s) => dates.includes(s.date))
     : sessions;
-  return filtered
+  const totalSeconds = filtered
     .filter((s) => s.subjectId === subjectId)
-    .reduce((acc, s) => acc + Math.floor(s.duration / 60), 0);
+    .reduce((acc, s) => acc + s.duration, 0);
+  return Math.floor(totalSeconds / 60);
 }
 
 export function calculateStreak(sessions: StudySession[], minMinutes = 30): number {

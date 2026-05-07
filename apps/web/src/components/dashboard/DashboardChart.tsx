@@ -136,9 +136,10 @@ export function DashboardChart() {
       const curMonth = today.slice(0, 7);
       return range.map(({ date, label }) => {
         const [year, month] = date.split("-");
-        const mins = sessions
+        const totalSecs = sessions
           .filter((s) => s.date.startsWith(`${year}-${month}`))
-          .reduce((acc, s) => acc + Math.floor(s.duration / 60), 0);
+          .reduce((acc, s) => acc + s.duration, 0);
+        const mins = Math.floor(totalSecs / 60);
         return { label, minutes: mins + (date === curMonth ? liveMin : 0) };
       });
     }

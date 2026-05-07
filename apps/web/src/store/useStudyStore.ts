@@ -344,19 +344,17 @@ export const useStudyStore = create<StudyStore>()((set, get) => ({
 
     const now = new Date().toISOString();
 
-    // Démarrage optimiste : le timer démarre IMMÉDIATEMENT localement
-    // sans attendre la réponse Supabase pour que l'UI soit réactive.
+    // Démarrage optimiste : le timer démarre IMMÉDIATEMENT, Supabase suit en arrière-plan
     set({
       selectedSubjectId: subjectId,
       status: "running",
-      currentSessionId: null,   // sera mis à jour dès que Supabase répond
+      currentSessionId: null,
       currentSessionStart: now,
       timerStartedAt: Date.now(),
       elapsedAtStart: elapsed,
       remainingAtStart: remaining,
     });
 
-    // Sync Supabase en arrière-plan
     try {
       const uid = requireUser(userId);
       const supabase = createClient();
@@ -373,13 +371,18 @@ export const useStudyStore = create<StudyStore>()((set, get) => ({
         .single();
       if (error) throw error;
 
+      // Si le timer a été stoppé/resetté pendant l'insert, supprimer la session fantôme
+      if (get().status !== "running" || get().currentSessionStart !== now) {
+        await supabase.from("sessions").delete().eq("id", (data as SessionRow).id);
+        return;
+      }
+
       const session = mapSession(data as SessionRow);
       set((s) => ({
         sessions: [session, ...s.sessions],
         currentSessionId: session.id,
       }));
     } catch (e) {
-      // Revert si la sauvegarde Supabase échoue
       set({
         status: "idle",
         timerStartedAt: null,
@@ -423,34 +426,21 @@ export const useStudyStore = create<StudyStore>()((set, get) => ({
   },
 
   stopTimer: async () => {
-    const { elapsed, elapsedAtStart, currentSessionId, mode, pomodoroConfig } = get();
+    const {
+      elapsed, elapsedAtStart, currentSessionId, currentSessionStart,
+      selectedSubjectId, mode, pomodoroConfig, userId,
+    } = get();
 
-    // Durée réelle de CE segment uniquement (elapsed accumule depuis le premier start)
     const segmentDuration = Math.max(0, elapsed - elapsedAtStart);
 
-    if (currentSessionId) {
-      if (segmentDuration > 0) {
-        try {
-          const supabase = createClient();
-          const { error } = await supabase
-            .from("sessions")
-            .update({ duration: segmentDuration })
-            .eq("id", currentSessionId);
-          if (error) throw error;
-          set((s) => ({
-            sessions: s.sessions.map((sess) =>
-              sess.id === currentSessionId ? { ...sess, duration: segmentDuration } : sess
-            ),
-          }));
-        } catch (e) {
-          set({ error: (e as Error).message });
-        }
-      } else {
-        // Aucun temps écoulé : supprimer la session vide
-        await get().deleteSession(currentSessionId);
-      }
+    // 1. Mise à jour optimiste + reset UI immédiat (pas de délai Supabase)
+    if (currentSessionId && segmentDuration > 0) {
+      set((s) => ({
+        sessions: s.sessions.map((sess) =>
+          sess.id === currentSessionId ? { ...sess, duration: segmentDuration } : sess
+        ),
+      }));
     }
-    // Si status était "paused" : currentSessionId est null, durée déjà sauvée dans pauseTimer
 
     const remaining = mode === "pomodoro" ? pomodoroConfig.workDuration : 0;
     set({
@@ -465,8 +455,46 @@ export const useStudyStore = create<StudyStore>()((set, get) => ({
       remainingAtStart: remaining,
     });
 
-    // Resync depuis Supabase pour garantir que le dashboard et les stats sont à jour
-    await get().fetchSessions();
+    // 2. Persistance Supabase
+    if (segmentDuration <= 0) {
+      if (currentSessionId) await get().deleteSession(currentSessionId);
+      return;
+    }
+
+    try {
+      const supabase = createClient();
+
+      if (currentSessionId) {
+        // Cas normal : mettre à jour la session créée par startTimer
+        const { error } = await supabase
+          .from("sessions")
+          .update({ duration: segmentDuration })
+          .eq("id", currentSessionId);
+        if (error) throw error;
+      } else {
+        // Race condition : startTimer n'a pas encore retourné l'ID — insérer directement
+        const uid = requireUser(userId);
+        const { data, error } = await supabase
+          .from("sessions")
+          .insert({
+            user_id: uid,
+            subject_id: selectedSubjectId,
+            duration: segmentDuration,
+            started_at: currentSessionStart ?? new Date().toISOString(),
+            mode,
+          })
+          .select("id,user_id,subject_id,duration,started_at,created_at,mode")
+          .single();
+        if (error) throw error;
+        const session = mapSession(data as SessionRow);
+        set((s) => ({ sessions: [session, ...s.sessions] }));
+      }
+    } catch (e) {
+      set({ error: (e as Error).message });
+    } finally {
+      // 3. Resync depuis Supabase — garantit que le dashboard est à jour même après rechargement
+      await get().fetchSessions();
+    }
   },
 
   resetTimer: async () => {
