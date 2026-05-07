@@ -9,13 +9,20 @@ import { getWeekDates, getTotalMinutesForSubject, formatDuration } from "@/lib/u
 export function DashboardSubjects() {
   const sessions = useStudyStore((s) => s.sessions);
   const subjects = useStudyStore((s) => s.subjects);
+  const status = useStudyStore((s) => s.status);
+  const elapsed = useStudyStore((s) => s.elapsed);
+  const selectedSubjectId = useStudyStore((s) => s.selectedSubjectId);
   const weekDates = getWeekDates();
 
   const subjectData = subjects
     .map((sub) => {
       const done = getTotalMinutesForSubject(sessions, sub.id, weekDates);
-      const pct = Math.min((done / sub.goal) * 100, 100);
-      return { ...sub, done, pct };
+      const liveExtra = (status === "running" && sub.id === selectedSubjectId)
+        ? Math.floor(elapsed / 60)
+        : 0;
+      const total = done + liveExtra;
+      const pct = Math.min((total / sub.goal) * 100, 100);
+      return { ...sub, done: total, pct };
     })
     .sort((a, b) => b.done - a.done);
 

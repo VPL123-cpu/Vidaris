@@ -267,11 +267,11 @@ export function DashboardTimerRing() {
                 }`}
               >
                 {isRunning ? (
-                  <><Pause size={14} /> Gérer le timer</>
+                  <><Pause size={14} /> Pause</>
                 ) : isPaused ? (
                   <><Play size={14} fill="currentColor" /> Reprendre</>
                 ) : (
-                  <><Play size={14} fill="currentColor" /> Lancer une session</>
+                  <><Play size={14} fill="currentColor" /> Lancer</>
                 )}
               </motion.button>
 

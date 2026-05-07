@@ -341,15 +341,24 @@ export const useStudyStore = create<StudyStore>()((set, get) => ({
       return;
     }
 
-    // Synchronise la matière sélectionnée si on passe un override
-    if (overrideSubjectId) {
-      set({ selectedSubjectId: overrideSubjectId });
-    }
+    const now = new Date().toISOString();
 
+    // Démarrage optimiste : le timer démarre IMMÉDIATEMENT localement
+    // sans attendre la réponse Supabase pour que l'UI soit réactive.
+    set({
+      selectedSubjectId: subjectId,
+      status: "running",
+      currentSessionId: null,   // sera mis à jour dès que Supabase répond
+      currentSessionStart: now,
+      timerStartedAt: Date.now(),
+      elapsedAtStart: elapsed,
+      remainingAtStart: remaining,
+    });
+
+    // Sync Supabase en arrière-plan
     try {
       const uid = requireUser(userId);
       const supabase = createClient();
-      const now = new Date().toISOString();
       const { data, error } = await supabase
         .from("sessions")
         .insert({
@@ -366,16 +375,17 @@ export const useStudyStore = create<StudyStore>()((set, get) => ({
       const session = mapSession(data as SessionRow);
       set((s) => ({
         sessions: [session, ...s.sessions],
-        status: "running",
-        selectedSubjectId: subjectId,
         currentSessionId: session.id,
-        currentSessionStart: now,
-        timerStartedAt: Date.now(),
-        elapsedAtStart: elapsed,
-        remainingAtStart: remaining,
       }));
     } catch (e) {
-      set({ error: (e as Error).message });
+      // Revert si la sauvegarde Supabase échoue
+      set({
+        status: "idle",
+        timerStartedAt: null,
+        currentSessionStart: null,
+        currentSessionId: null,
+        error: (e as Error).message,
+      });
     }
   },
 

@@ -112,6 +112,8 @@ export function DashboardChart() {
   const [weekOffset, setWeekOffset] = useState(0);
   const [direction, setDirection] = useState<1 | -1>(1);
   const sessions = useStudyStore((s) => s.sessions);
+  const status = useStudyStore((s) => s.status);
+  const elapsed = useStudyStore((s) => s.elapsed);
 
   function navigate(dir: -1 | 1) {
     setDirection(dir);
@@ -127,22 +129,28 @@ export function DashboardChart() {
 
   const data = useMemo(() => {
     const range = buildDateRange(period, weekOffset);
+    // Minutes du chrono en cours (mise à jour chaque seconde)
+    const liveMin = status === "running" ? Math.floor(elapsed / 60) : 0;
 
     if (period === "year") {
+      const curMonth = today.slice(0, 7);
       return range.map(({ date, label }) => {
         const [year, month] = date.split("-");
         const mins = sessions
           .filter((s) => s.date.startsWith(`${year}-${month}`))
           .reduce((acc, s) => acc + Math.floor(s.duration / 60), 0);
-        return { label, minutes: mins };
+        return { label, minutes: mins + (date === curMonth ? liveMin : 0) };
       });
     }
 
-    return range.map(({ date, label }) => ({
-      label,
-      minutes: date <= today ? getTotalMinutesForDate(sessions, date) : null,
-    }));
-  }, [period, sessions, weekOffset, today]);
+    return range.map(({ date, label }) => {
+      const base = date <= today ? getTotalMinutesForDate(sessions, date) : null;
+      return {
+        label,
+        minutes: date === today && base !== null ? base + liveMin : base,
+      };
+    });
+  }, [period, sessions, weekOffset, today, status, elapsed]);
 
   const totalMinutes = data.reduce((acc, d) => acc + (d.minutes ?? 0), 0);
   const activeDays = data.filter((d) => (d.minutes ?? 0) > 0).length;
