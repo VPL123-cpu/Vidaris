@@ -138,9 +138,9 @@ export default function GoalsPage() {
     },
     {
       title: "XP total",
-      description: "Atteindre 1 000 XP (niveau 6)",
-      current: Math.min(totalXP, 1000),
-      target: 1000,
+      description: "Atteindre 1 050 XP (niveau 7)",
+      current: Math.min(totalXP, 1050),
+      target: 1050,
       unit: "XP",
       icon: Zap,
       color: "#a78bfa",

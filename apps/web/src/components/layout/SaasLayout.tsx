@@ -1,8 +1,6 @@
 "use client";
 
 import { ReactNode, useEffect } from "react";
-import { AnimatePresence } from "framer-motion";
-import { usePathname } from "next/navigation";
 import { Sidebar } from "./Sidebar";
 import { SiteHeader } from "./SiteHeader";
 import { TimerProvider } from "./TimerProvider";
@@ -12,7 +10,6 @@ import { useStudyStore } from "@/store/useStudyStore";
 import { useToastStore } from "@/store/useToastStore";
 
 export function SaasLayout({ children }: { children: ReactNode }) {
-  const pathname = usePathname();
   const initialize = useAuthStore((s) => s.initialize);
   const initialized = useAuthStore((s) => s.initialized);
   const user = useAuthStore((s) => s.user);
@@ -54,11 +51,9 @@ export function SaasLayout({ children }: { children: ReactNode }) {
 
       <div className="flex flex-col flex-1 min-w-0 relative z-10">
         <SiteHeader />
-        <AnimatePresence mode="wait">
-          <div key={pathname} className="flex-1 overflow-y-auto">
-            {children}
-          </div>
-        </AnimatePresence>
+        <div className="flex-1 overflow-y-auto">
+          {children}
+        </div>
       </div>
 
       <ToastContainer />

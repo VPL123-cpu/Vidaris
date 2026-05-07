@@ -6,6 +6,7 @@ import { useStudyStore } from "@/store/useStudyStore";
 import {
   calculateXP, getLevelProgress, getXPRange, getLevelName,
   XP_PER_MINUTE, XP_PER_STREAK_DAY, XP_GOAL_BONUS, XP_LEVELS, LEVEL_NAMES,
+  getMilestoneColor, MILESTONE_LEVELS,
 } from "@/lib/xp";
 import { calculateStreak, formatDuration } from "@/lib/utils";
 import { Zap, Flame, Target, Clock, Trophy, Star, TrendingUp } from "lucide-react";
@@ -40,7 +41,7 @@ export default function LevelPage() {
   const totalMinutes = sessions.reduce((acc, s) => acc + Math.floor(s.duration / 60), 0);
   const totalXP = calculateXP(totalMinutes, streak, 0);
 
-  const { level, name, xpInLevel, xpForLevel, progressPct } = getLevelProgress(totalXP);
+  const { level, name, xpInLevel, xpForLevel, progressPct, color: levelColor, isMilestone } = getLevelProgress(totalXP);
 
   const nextLevel = Math.min(level + 1, XP_LEVELS.length);
   const { next: nextLevelXP } = getXPRange(level);
@@ -66,13 +67,28 @@ export default function LevelPage() {
           <div className="relative flex flex-col sm:flex-row items-start sm:items-center gap-6">
             {/* Level badge */}
             <div className="relative">
-              <div className="w-24 h-24 rounded-2xl bg-gradient-to-br from-[#F5C044] to-[#e8a820] flex flex-col items-center justify-center shadow-[0_0_40px_rgba(245,192,68,0.4)]">
+              <div
+                className="w-24 h-24 rounded-2xl flex flex-col items-center justify-center"
+                style={{
+                  background: `linear-gradient(135deg, ${levelColor}, ${levelColor}bb)`,
+                  boxShadow: `0 0 40px ${levelColor}60`,
+                }}
+              >
                 <span className="text-3xl font-black text-[#0B0F1A]">{level}</span>
                 <span className="text-[10px] font-bold text-[#0B0F1A]/70 uppercase tracking-wider">niveau</span>
               </div>
-              <div className="absolute -top-1 -right-1 w-5 h-5 rounded-full bg-[#F5C044] flex items-center justify-center">
+              <div
+                className="absolute -top-1 -right-1 w-5 h-5 rounded-full flex items-center justify-center"
+                style={{ backgroundColor: levelColor }}
+              >
                 <Star size={10} className="text-[#0B0F1A]" fill="currentColor" />
               </div>
+              {isMilestone && (
+                <div className="absolute -bottom-1 -left-1 text-[10px] px-1.5 py-0.5 rounded-md font-bold text-[#0B0F1A]"
+                  style={{ backgroundColor: levelColor }}>
+                  ✦ Palier
+                </div>
+              )}
             </div>
 
             <div className="flex-1 min-w-0">
@@ -101,7 +117,7 @@ export default function LevelPage() {
                     animate={{ width: `${progressPct}%` }}
                     transition={{ duration: 1, ease: "easeOut", delay: 0.3 }}
                     className="h-full rounded-full relative overflow-hidden"
-                    style={{ background: "linear-gradient(90deg, #F5C044, #f7cb6a)" }}
+                    style={{ background: `linear-gradient(90deg, ${levelColor}, ${levelColor}cc)` }}
                   >
                     <div className="absolute inset-0 progress-shimmer" />
                   </motion.div>
@@ -173,46 +189,71 @@ export default function LevelPage() {
             <Trophy size={16} className="text-slate-400" />
             <h3 className="text-sm font-semibold text-white">Parcours des niveaux</h3>
           </div>
-          <div className="space-y-2">
+          <div className="space-y-1.5">
             {LEVEL_NAMES.map((levelName, i) => {
               const lvl = i + 1;
               const xpRequired = XP_LEVELS[i];
               const isUnlocked = level >= lvl;
               const isCurrent = level === lvl;
+              const isMilestone = MILESTONE_LEVELS.has(lvl);
+              const milestoneColor = getMilestoneColor(lvl);
 
               return (
                 <motion.div
                   key={lvl}
                   initial={{ opacity: 0, x: -8 }}
                   animate={{ opacity: 1, x: 0 }}
-                  transition={{ delay: 0.2 + i * 0.04 }}
-                  className={`flex items-center gap-3 px-4 py-3 rounded-xl transition-all ${
+                  transition={{ delay: 0.2 + i * 0.025 }}
+                  className={`flex items-center gap-3 px-3 py-2.5 rounded-xl transition-all ${
                     isCurrent
-                      ? "bg-[#F5C044]/10 border border-[#F5C044]/20"
+                      ? "border"
                       : isUnlocked
                       ? "bg-white/[0.03]"
-                      : "opacity-40"
+                      : isMilestone
+                      ? "opacity-50"
+                      : "opacity-30"
                   }`}
+                  style={isCurrent ? {
+                    backgroundColor: `${milestoneColor}12`,
+                    borderColor: `${milestoneColor}30`,
+                  } : undefined}
                 >
                   <div
-                    className={`w-8 h-8 rounded-lg flex items-center justify-center text-sm font-bold flex-shrink-0 ${
+                    className="w-7 h-7 rounded-lg flex items-center justify-center text-xs font-bold flex-shrink-0"
+                    style={
                       isCurrent
-                        ? "bg-[#F5C044] text-[#0B0F1A]"
+                        ? { backgroundColor: milestoneColor, color: "#0B0F1A" }
                         : isUnlocked
-                        ? "bg-white/10 text-white"
-                        : "bg-white/5 text-slate-600"
-                    }`}
+                        ? { backgroundColor: "rgba(255,255,255,0.1)", color: "#fff" }
+                        : { backgroundColor: "rgba(255,255,255,0.05)", color: "#475569" }
+                    }
                   >
                     {lvl}
                   </div>
                   <div className="flex-1 min-w-0">
-                    <p className={`text-sm font-semibold ${isCurrent ? "text-[#F5C044]" : isUnlocked ? "text-white" : "text-slate-600"}`}>
-                      {levelName}
-                    </p>
-                    <p className="text-xs text-slate-600">{xpRequired} XP</p>
+                    <div className="flex items-center gap-1.5">
+                      <p
+                        className="text-sm font-semibold"
+                        style={{ color: isCurrent ? milestoneColor : isUnlocked ? "#fff" : "#475569" }}
+                      >
+                        {levelName}
+                      </p>
+                      {isMilestone && (
+                        <span
+                          className="text-[9px] font-bold px-1 py-0.5 rounded"
+                          style={{ color: milestoneColor, backgroundColor: `${milestoneColor}20` }}
+                        >
+                          ✦
+                        </span>
+                      )}
+                    </div>
+                    <p className="text-[11px] text-slate-600">{xpRequired.toLocaleString()} XP</p>
                   </div>
                   {isCurrent && (
-                    <span className="text-xs font-semibold text-[#F5C044] bg-[#F5C044]/10 px-2 py-0.5 rounded-full border border-[#F5C044]/20">
+                    <span
+                      className="text-[11px] font-semibold px-2 py-0.5 rounded-full"
+                      style={{ color: milestoneColor, backgroundColor: `${milestoneColor}15`, border: `1px solid ${milestoneColor}30` }}
+                    >
                       Actuel
                     </span>
                   )}
