@@ -22,7 +22,7 @@ function RoundedBar(
 ) {
   return function Shape(props: {
     x?: number; y?: number; width?: number; height?: number;
-    fillOpacity?: number; index?: number;
+    fillOpacity?: string | number; index?: number;
   }) {
     const { x = 0, y = 0, width = 0, height = 0, fillOpacity = 1, index = 0 } = props;
     if (height <= 0) return null;
