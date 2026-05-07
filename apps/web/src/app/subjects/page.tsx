@@ -37,7 +37,6 @@ function SubjectForm({ initial, onSave, onCancel }: SubjectFormProps) {
     >
       <p className="text-sm font-semibold text-white">{initial?.id ? "Modifier la matière" : "Nouvelle matière"}</p>
 
-      {/* Name */}
       <div>
         <label className="text-xs text-slate-400 font-medium mb-1.5 block">Nom</label>
         <input
@@ -49,7 +48,6 @@ function SubjectForm({ initial, onSave, onCancel }: SubjectFormProps) {
         />
       </div>
 
-      {/* Color picker */}
       <div>
         <label className="text-xs text-slate-400 font-medium mb-1.5 block">Couleur</label>
         <div className="flex items-center gap-2 flex-wrap">
@@ -73,7 +71,6 @@ function SubjectForm({ initial, onSave, onCancel }: SubjectFormProps) {
         </div>
       </div>
 
-      {/* Goal */}
       <div>
         <label className="text-xs text-slate-400 font-medium mb-1.5 block">
           Objectif hebdomadaire : <span className="text-white font-semibold">{formatDuration(goal)}</span>
@@ -93,7 +90,6 @@ function SubjectForm({ initial, onSave, onCancel }: SubjectFormProps) {
         </div>
       </div>
 
-      {/* Actions */}
       <div className="flex gap-2 pt-1">
         <button
           onClick={onCancel}
@@ -117,11 +113,12 @@ interface SubjectCardProps {
   subject: Subject;
   weekMinutes: number;
   totalMinutes: number;
+  isEditing: boolean;
   onEdit: () => void;
   onDelete: () => void;
 }
 
-function SubjectCard({ subject, weekMinutes, totalMinutes, onEdit, onDelete }: SubjectCardProps) {
+function SubjectCard({ subject, weekMinutes, totalMinutes, isEditing, onEdit, onDelete }: SubjectCardProps) {
   const pct = Math.min((weekMinutes / subject.goal) * 100, 100);
 
   return (
@@ -130,7 +127,9 @@ function SubjectCard({ subject, weekMinutes, totalMinutes, onEdit, onDelete }: S
       initial={{ opacity: 0, scale: 0.95 }}
       animate={{ opacity: 1, scale: 1 }}
       exit={{ opacity: 0, scale: 0.9, height: 0 }}
-      className="bg-[#111827] border border-white/[0.06] rounded-2xl p-5 hover:border-white/10 transition-all group"
+      className={`bg-[#111827] rounded-2xl p-5 hover:border-white/10 transition-all group border ${
+        isEditing ? "border-[#F5C044]/30" : "border-white/[0.06]"
+      }`}
     >
       <div className="flex items-start justify-between mb-4">
         <div className="flex items-center gap-3">
@@ -209,6 +208,7 @@ export default function SubjectsPage() {
   const [deletingId, setDeletingId] = useState<string | null>(null);
 
   const weekDates = getWeekDates();
+  const editingSubject = editingId ? subjects.find((s) => s.id === editingId) : null;
 
   function handleAdd(data: { label: string; color: string; goal: number }) {
     addSubject({ label: data.label, color: data.color, bgColor: hexToRgba(data.color, 0.15), goal: data.goal });
@@ -247,7 +247,7 @@ export default function SubjectsPage() {
           </button>
         </div>
 
-        {/* Add form */}
+        {/* Formulaire d'ajout */}
         <AnimatePresence>
           {showAdd && (
             <SubjectForm
@@ -257,28 +257,30 @@ export default function SubjectsPage() {
           )}
         </AnimatePresence>
 
-        {/* Grid */}
+        {/* Formulaire d'édition — affiché hors de la grille */}
+        <AnimatePresence>
+          {editingId && editingSubject && (
+            <SubjectForm
+              initial={editingSubject}
+              onSave={(data) => handleEdit(editingId, data)}
+              onCancel={() => setEditingId(null)}
+            />
+          )}
+        </AnimatePresence>
+
+        {/* Grille des cartes */}
         <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
           <AnimatePresence mode="popLayout">
             {subjects.map((sub) => (
-              editingId === sub.id ? (
-                <motion.div key={`edit-${sub.id}`} layout>
-                  <SubjectForm
-                    initial={sub}
-                    onSave={(data) => handleEdit(sub.id, data)}
-                    onCancel={() => setEditingId(null)}
-                  />
-                </motion.div>
-              ) : (
-                <SubjectCard
-                  key={sub.id}
-                  subject={sub}
-                  weekMinutes={getTotalMinutesForSubject(sessions, sub.id, weekDates)}
-                  totalMinutes={getTotalMinutesForSubject(sessions, sub.id)}
-                  onEdit={() => { setEditingId(sub.id); setShowAdd(false); }}
-                  onDelete={() => setDeletingId(sub.id)}
-                />
-              )
+              <SubjectCard
+                key={sub.id}
+                subject={sub}
+                weekMinutes={getTotalMinutesForSubject(sessions, sub.id, weekDates)}
+                totalMinutes={getTotalMinutesForSubject(sessions, sub.id)}
+                isEditing={editingId === sub.id}
+                onEdit={() => { setEditingId(sub.id); setShowAdd(false); }}
+                onDelete={() => setDeletingId(sub.id)}
+              />
             ))}
           </AnimatePresence>
         </div>

@@ -10,40 +10,7 @@ import {
   calculateStreak,
 } from "@/lib/utils";
 
-interface KpiCardProps {
-  icon: React.ElementType;
-  label: string;
-  value: string;
-  sub: string;
-  iconColor: string;
-  iconBg: string;
-  index: number;
-}
-
-function KpiCard({ icon: Icon, label, value, sub, iconColor, iconBg, index }: KpiCardProps) {
-  return (
-    <motion.div
-      initial={{ opacity: 0, y: 12 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.3, delay: index * 0.06 }}
-      className="bg-[#111827] border border-white/[0.06] rounded-2xl p-5 flex items-start gap-4 hover:border-white/10 transition-colors group"
-    >
-      <div
-        className="w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0 mt-0.5"
-        style={{ backgroundColor: iconBg }}
-      >
-        <Icon size={18} style={{ color: iconColor }} strokeWidth={2} />
-      </div>
-      <div className="min-w-0">
-        <p className="text-xs font-medium text-slate-500 mb-1">{label}</p>
-        <p className="text-2xl font-bold text-white leading-none">{value}</p>
-        <p className="text-xs text-slate-500 mt-1.5">{sub}</p>
-      </div>
-    </motion.div>
-  );
-}
-
-export function DashboardKpis() {
+function useKpis() {
   const sessions = useStudyStore((s) => s.sessions);
   const weekDates = getWeekDates();
   const today = new Date().toISOString().split("T")[0];
@@ -61,7 +28,7 @@ export function DashboardKpis() {
   const avgMinutes =
     totalDaysThisWeek > 0 ? Math.round(weekTotal / totalDaysThisWeek) : 0;
 
-  const kpis = [
+  return [
     {
       icon: Clock,
       label: "Temps cette semaine",
@@ -95,12 +62,38 @@ export function DashboardKpis() {
       iconBg: "rgba(167,139,250,0.12)",
     },
   ];
+}
+
+// Compact variant — affichée à côté du titre
+export function DashboardKpisCompact() {
+  const kpis = useKpis();
 
   return (
-    <div className="grid grid-cols-2 xl:grid-cols-4 gap-4">
-      {kpis.map((kpi, i) => (
-        <KpiCard key={kpi.label} {...kpi} index={i} />
-      ))}
+    <div className="grid grid-cols-2 gap-2">
+      {kpis.map((kpi, i) => {
+        const Icon = kpi.icon;
+        return (
+          <motion.div
+            key={kpi.label}
+            initial={{ opacity: 0, y: 8 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.25, delay: i * 0.05 }}
+            className="bg-[#111827] border border-white/[0.06] rounded-xl px-3 py-2.5 flex items-center gap-2.5 hover:border-white/10 transition-colors"
+          >
+            <div
+              className="w-7 h-7 rounded-lg flex items-center justify-center flex-shrink-0"
+              style={{ backgroundColor: kpi.iconBg }}
+            >
+              <Icon size={13} style={{ color: kpi.iconColor }} strokeWidth={2} />
+            </div>
+            <div className="min-w-0">
+              <p className="text-[10px] text-slate-500 leading-tight truncate">{kpi.label}</p>
+              <p className="text-sm font-bold text-white leading-tight">{kpi.value}</p>
+              <p className="text-[10px] text-slate-600 leading-tight truncate">{kpi.sub}</p>
+            </div>
+          </motion.div>
+        );
+      })}
     </div>
   );
 }

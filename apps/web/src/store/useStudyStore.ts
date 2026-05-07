@@ -84,6 +84,10 @@ interface StudyStore extends TimerState {
   updatePomodoroConfig: (patch: Partial<PomodoroConfig>) => void;
   updateStreakConfig: (patch: Partial<StreakConfig>) => void;
   toggleHardcoreMode: () => void;
+
+  sendFriendRequest: (email: string) => Promise<{ success: boolean; error?: string }>;
+  acceptFriendRequest: (friendshipId: string) => Promise<void>;
+  declineFriendRequest: (friendshipId: string) => Promise<void>;
 }
 
 type SubjectRow = {
@@ -601,5 +605,81 @@ export const useStudyStore = create<StudyStore>()((set, get) => ({
 
   toggleHardcoreMode: () => {
     set((s) => ({ hardcoreMode: !s.hardcoreMode }));
+  },
+
+  sendFriendRequest: async (email) => {
+    try {
+      const uid = requireUser(get().userId);
+      const supabase = createClient();
+
+      const { data: targetUsers, error: findError } = await supabase
+        .from("users")
+        .select("id")
+        .eq("email", email.trim().toLowerCase());
+
+      if (findError || !targetUsers || targetUsers.length === 0) {
+        return { success: false, error: "Aucun compte trouvé avec cet email." };
+      }
+
+      const targetUser = targetUsers[0] as { id: string };
+
+      if (targetUser.id === uid) {
+        return { success: false, error: "Tu ne peux pas t'ajouter toi-même." };
+      }
+
+      const { data: existing } = await supabase
+        .from("friendships")
+        .select("id, status")
+        .or(
+          `and(user_id.eq.${uid},friend_id.eq.${targetUser.id}),and(user_id.eq.${targetUser.id},friend_id.eq.${uid})`
+        );
+
+      if (existing && existing.length > 0) {
+        const f = existing[0] as { status: string };
+        if (f.status === "accepted") return { success: false, error: "Vous êtes déjà amis." };
+        return { success: false, error: "Une demande est déjà en attente." };
+      }
+
+      const { error } = await supabase
+        .from("friendships")
+        .insert({ user_id: uid, friend_id: targetUser.id, status: "pending" });
+
+      if (error) throw error;
+
+      await get().fetchFriendships();
+      return { success: true };
+    } catch (e) {
+      return { success: false, error: (e as Error).message };
+    }
+  },
+
+  acceptFriendRequest: async (friendshipId) => {
+    try {
+      const supabase = createClient();
+      const { error } = await supabase
+        .from("friendships")
+        .update({ status: "accepted" })
+        .eq("id", friendshipId);
+      if (error) throw error;
+      await get().fetchFriendships();
+      await get().fetchFriendPresence();
+    } catch (e) {
+      set({ error: (e as Error).message });
+    }
+  },
+
+  declineFriendRequest: async (friendshipId) => {
+    try {
+      const supabase = createClient();
+      const { error } = await supabase
+        .from("friendships")
+        .delete()
+        .eq("id", friendshipId);
+      if (error) throw error;
+      await get().fetchFriendships();
+      await get().fetchFriendPresence();
+    } catch (e) {
+      set({ error: (e as Error).message });
+    }
   },
 }));
