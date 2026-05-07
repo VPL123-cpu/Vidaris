@@ -15,6 +15,28 @@ import {
 import { useStudyStore } from "@/store/useStudyStore";
 import { getWeekDates } from "@/lib/utils";
 
+function RoundedBar(
+  subId: string,
+  topByDay: Record<number, string>,
+  color: string
+) {
+  return function Shape(props: {
+    x?: number; y?: number; width?: number; height?: number;
+    fillOpacity?: number; index?: number;
+  }) {
+    const { x = 0, y = 0, width = 0, height = 0, fillOpacity = 1, index = 0 } = props;
+    if (height <= 0) return null;
+    const r = topByDay[index] === subId ? 4 : 0;
+    return (
+      <path
+        d={`M ${x + r},${y} Q ${x},${y} ${x},${y + r} L ${x},${y + height} L ${x + width},${y + height} L ${x + width},${y + r} Q ${x + width},${y} ${x + width - r},${y} Z`}
+        fill={color}
+        fillOpacity={fillOpacity}
+      />
+    );
+  };
+}
+
 const DAY_LABELS = ["Lun", "Mar", "Mer", "Jeu", "Ven", "Sam", "Dim"];
 const GOAL_MINUTES = 120;
 
@@ -112,6 +134,17 @@ export function WeeklyChart({ period }: WeeklyChartProps) {
     }
   }
 
+  // For each day, find the last subject (by stack order) that has > 0 minutes
+  const topByDay: Record<number, string> = {};
+  data.forEach((entry, dayIndex) => {
+    for (let i = subjects.length - 1; i >= 0; i--) {
+      if ((entry[subjects[i].id] as number) > 0) {
+        topByDay[dayIndex] = subjects[i].id;
+        break;
+      }
+    }
+  });
+
   const today = new Date().toISOString().split("T")[0];
   const todayIndex = weekDates.indexOf(today);
 
@@ -166,14 +199,14 @@ export function WeeklyChart({ period }: WeeklyChartProps) {
               opacity: 0.6,
             }}
           />
-          {subjects.map((sub, i) => (
+          {subjects.map((sub) => (
             <Bar
               key={sub.id}
               dataKey={sub.id}
               stackId="a"
               fill={sub.color}
               name={sub.label}
-              radius={i === subjects.length - 1 ? [4, 4, 0, 0] : [0, 0, 0, 0]}
+              shape={RoundedBar(sub.id, topByDay, sub.color)}
             >
               {data.map((_, index) => (
                 <Cell

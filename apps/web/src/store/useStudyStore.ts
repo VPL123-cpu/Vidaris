@@ -714,7 +714,7 @@ export const useStudyStore = create<StudyStore>()((set, get) => ({
       const { data: targetUsers, error: findError } = await supabase
         .from("users")
         .select("id")
-        .eq("email", email.trim().toLowerCase());
+        .ilike("email", email.trim());
 
       if (findError || !targetUsers || targetUsers.length === 0) {
         return { success: false, error: "Aucun compte trouvé avec cet email." };
