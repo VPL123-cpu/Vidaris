@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Play, Pause, RotateCcw, Coffee, Zap, Flame } from "lucide-react";
+import { Play, Pause, Square, Coffee, Zap, Flame } from "lucide-react";
 import { useStudyStore } from "@/store/useStudyStore";
 import { formatTime, getTotalMinutesForDate, getTodayKey, formatDuration } from "@/lib/utils";
 import { GlowButton } from "@/components/ui/GlowButton";
@@ -68,7 +68,7 @@ export function TimerPage() {
   } = useStudyStore();
   const startTimer = useStudyStore((s) => s.startTimer);
   const pauseTimer = useStudyStore((s) => s.pauseTimer);
-  const resetTimer = useStudyStore((s) => s.resetTimer);
+  const stopTimer = useStudyStore((s) => s.stopTimer);
 
   const subject = getSubjectFromList(subjects, selectedSubjectId);
   const subjectColor = subject?.color ?? "#64748b";
@@ -311,10 +311,11 @@ export function TimerPage() {
                 initial={{ opacity: 0, scale: 0.8, width: 0 }}
                 animate={{ opacity: 1, scale: 1, width: "auto" }}
                 exit={{ opacity: 0, scale: 0.8, width: 0 }}
-                onClick={resetTimer}
-                className="px-4 rounded-2xl bg-white/5 border border-white/[0.08] text-slate-400 hover:text-white hover:bg-white/10 transition-all"
+                onClick={stopTimer}
+                className="px-4 rounded-2xl bg-white/5 border border-white/[0.08] text-slate-400 hover:text-red-400 hover:bg-red-500/10 transition-all"
+                title="Arrêter et sauvegarder"
               >
-                <RotateCcw size={18} />
+                <Square size={16} fill="currentColor" />
               </motion.button>
             )}
           </AnimatePresence>

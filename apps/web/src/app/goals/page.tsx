@@ -36,30 +36,30 @@ function GoalCard({ title, description, current, target, unit, icon: Icon, color
       initial={{ opacity: 0, y: 16 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.3, delay: index * 0.08 }}
-      className={`bg-[#111827] border rounded-2xl p-6 transition-all ${
+      className={`bg-[#111827] border rounded-2xl p-4 transition-all ${
         done ? "border-emerald-500/20" : "border-white/[0.06] hover:border-white/10"
       }`}
     >
-      <div className="flex items-start justify-between mb-5">
-        <div className="flex items-center gap-3">
+      <div className="flex items-start justify-between mb-4">
+        <div className="flex items-center gap-2.5">
           <div
-            className="w-11 h-11 rounded-xl flex items-center justify-center"
+            className="w-9 h-9 rounded-xl flex items-center justify-center flex-shrink-0"
             style={{ backgroundColor: `${color}18` }}
           >
-            <Icon size={20} style={{ color }} />
+            <Icon size={17} style={{ color }} />
           </div>
-          <div>
-            <p className="font-semibold text-white">{title}</p>
-            <p className="text-xs text-slate-500 mt-0.5">{description}</p>
+          <div className="min-w-0">
+            <p className="font-semibold text-white text-sm leading-tight">{title}</p>
+            <p className="text-[11px] text-slate-500 mt-0.5 leading-tight">{description}</p>
           </div>
         </div>
         <AnimatedCheck done={done} />
       </div>
 
       {/* Values */}
-      <div className="flex items-end gap-1.5 mb-3">
-        <span className="text-3xl font-bold text-white tabular-nums">{current}</span>
-        <span className="text-slate-500 text-sm mb-1">/ {target} {unit}</span>
+      <div className="flex items-end gap-1 mb-3">
+        <span className="text-2xl font-bold text-white tabular-nums">{current}</span>
+        <span className="text-slate-500 text-xs mb-0.5">/ {target} {unit}</span>
       </div>
 
       {/* Progress */}
@@ -148,7 +148,7 @@ export default function GoalsPage() {
   ];
 
   return (
-    <PageContainer maxWidth="lg">
+    <PageContainer maxWidth="2xl">
       <div className="space-y-6">
         <div>
           <h2 className="text-xl font-bold text-white">Objectifs</h2>
@@ -177,7 +177,7 @@ export default function GoalsPage() {
         </motion.div>
 
         {/* Goal cards */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div className="grid grid-cols-2 xl:grid-cols-4 gap-3">
           {goals.map((goal, i) => (
             <GoalCard key={goal.title} {...goal} index={i} />
           ))}

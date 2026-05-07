@@ -65,6 +65,7 @@ interface StudyStore extends TimerState {
   setSubject: (subjectId: string) => void;
   startTimer: (subjectId?: string) => Promise<void>;
   pauseTimer: () => Promise<void>;
+  stopTimer: () => Promise<void>;
   resetTimer: () => Promise<void>;
   tick: () => void;
 
@@ -416,6 +417,47 @@ export const useStudyStore = create<StudyStore>()((set, get) => ({
     } catch (e) {
       set({ error: (e as Error).message });
     }
+  },
+
+  stopTimer: async () => {
+    const { elapsed, currentSessionId, mode, pomodoroConfig } = get();
+
+    if (currentSessionId) {
+      if (elapsed > 0) {
+        // Sauvegarder la durée réelle avant de réinitialiser
+        try {
+          const supabase = createClient();
+          await supabase
+            .from("sessions")
+            .update({ duration: elapsed })
+            .eq("id", currentSessionId);
+          set((s) => ({
+            sessions: s.sessions.map((sess) =>
+              sess.id === currentSessionId ? { ...sess, duration: elapsed } : sess
+            ),
+          }));
+        } catch (e) {
+          set({ error: (e as Error).message });
+        }
+      } else {
+        // Aucun temps écoulé : supprimer la session vide
+        await get().deleteSession(currentSessionId);
+      }
+    }
+    // Si paused : currentSessionId est null, la durée a déjà été sauvegardée lors de pauseTimer
+
+    const remaining = mode === "pomodoro" ? pomodoroConfig.workDuration : 0;
+    set({
+      status: "idle",
+      elapsed: 0,
+      remaining,
+      pomodoroPhase: "work",
+      currentSessionId: null,
+      currentSessionStart: null,
+      timerStartedAt: null,
+      elapsedAtStart: 0,
+      remainingAtStart: remaining,
+    });
   },
 
   resetTimer: async () => {
